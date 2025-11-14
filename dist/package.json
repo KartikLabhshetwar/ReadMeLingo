@@ -30,8 +30,6 @@
     "files": [
         "dist",
         "lib",
-        "CLI_README.md",
-        "CLI_QUICKSTART.md",
         "LICENSE",
         "README.md"
     ],
@@ -51,6 +49,10 @@
     "dependencies": {
         "@clack/prompts": "^0.11.0",
         "commander": "^14.0.2",
+        "dotenv": "^16.4.5",
+        "next": "16.0.1",
+        "react": "19.2.0",
+        "react-dom": "19.2.0",
         "uuid": "^13.0.0"
     },
     "optionalDependencies": {
@@ -66,10 +68,7 @@
         "clsx": "^2.1.1",
         "jszip": "^3.10.1",
         "lucide-react": "^0.553.0",
-        "next": "16.0.1",
         "ora": "^9.0.0",
-        "react": "19.2.0",
-        "react-dom": "19.2.0",
         "react-markdown": "^10.1.0",
         "remark-gfm": "^4.0.1",
         "tailwind-merge": "^3.4.0"

@@ -34,10 +34,33 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+const dotenv_1 = require("dotenv");
+const path_1 = require("path");
+const fs_1 = require("fs");
 const commander_1 = require("commander");
 const prompts_1 = require("@clack/prompts");
 const translate_1 = require("./commands/translate");
 const packageJson = __importStar(require("../package.json"));
+const findEnvFile = () => {
+    const possiblePaths = [
+        (0, path_1.join)(process.cwd(), '.env'),
+        (0, path_1.resolve)(__dirname, '../../.env'),
+        (0, path_1.resolve)(__dirname, '../.env'),
+    ];
+    for (const envPath of possiblePaths) {
+        if ((0, fs_1.existsSync)(envPath)) {
+            return envPath;
+        }
+    }
+    return undefined;
+};
+const envPath = findEnvFile();
+if (envPath) {
+    (0, dotenv_1.config)({ path: envPath });
+}
+else {
+    (0, dotenv_1.config)();
+}
 const version = packageJson.version;
 const program = new commander_1.Command();
 program
@@ -117,12 +140,17 @@ async function handleTranslate() {
         message: 'Select target languages',
         options: languageOptions,
         required: true,
-        initialValues: ['es', 'fr', 'de'],
     });
     if ((0, prompts_1.isCancel)(selectedLanguages)) {
         (0, prompts_1.cancel)('Operation cancelled.');
         process.exit(0);
     }
+    if (!selectedLanguages || (Array.isArray(selectedLanguages) && selectedLanguages.length === 0)) {
+        (0, prompts_1.cancel)('No languages selected. Please select at least one language.');
+        process.exit(1);
+    }
+    const selectedLangs = Array.isArray(selectedLanguages) ? selectedLanguages : [selectedLanguages];
+    prompts_1.log.info(`Selected ${selectedLangs.length} language(s): ${selectedLangs.join(', ')}`);
     const outputDir = await (0, prompts_1.text)({
         message: 'Output directory for translated files',
         placeholder: './translations',
@@ -168,7 +196,7 @@ async function handleTranslate() {
     await (0, translate_1.translateRepo)({
         repoUrl: repoUrl,
         token,
-        languages: selectedLanguages,
+        languages: selectedLangs,
         outputDir: outputDir,
         includeContributing: filesToInclude.includes('contributing'),
         includeDocs: filesToInclude.includes('docs'),
@@ -180,7 +208,7 @@ program
     .description('Translate repository documentation files')
     .option('-r, --repo <repo>', 'GitHub repository URL or owner/repo')
     .option('-t, --token <token>', 'GitHub personal access token (for private repos)')
-    .option('-l, --languages <languages>', 'Comma-separated list of target languages (default: es,fr,de)')
+    .option('-l, --languages <languages>', 'Comma-separated list of target languages')
     .option('-o, --output <dir>', 'Output directory for translated files (default: ./translations)')
     .option('--include-contributing', 'Include CONTRIBUTING.md', false)
     .option('--include-docs', 'Include /docs folder', false)
@@ -191,10 +219,11 @@ program
     }
     (0, prompts_1.intro)('🌍 ReadMeLingo - Translation CLI');
     try {
-        let languages = options.languages
-            ? options.languages.split(',').map((l) => l.trim())
-            : ['es', 'fr', 'de'];
-        if (!options.languages) {
+        let languages = [];
+        if (options.languages) {
+            languages = options.languages.split(',').map((l) => l.trim()).filter((l) => l.length > 0);
+        }
+        if (!options.languages || languages.length === 0) {
             const languageOptions = [
                 { value: 'es', label: '🇪🇸 Spanish (es)' },
                 { value: 'fr', label: '🇫🇷 French (fr)' },
@@ -209,13 +238,17 @@ program
                 message: 'Select target languages',
                 options: languageOptions,
                 required: true,
-                initialValues: ['es', 'fr', 'de'],
             });
             if ((0, prompts_1.isCancel)(selected)) {
                 (0, prompts_1.cancel)('Operation cancelled.');
                 process.exit(0);
             }
-            languages = selected;
+            if (!selected || (Array.isArray(selected) && selected.length === 0)) {
+                (0, prompts_1.cancel)('No languages selected. Please select at least one language.');
+                process.exit(1);
+            }
+            languages = Array.isArray(selected) ? selected : [selected];
+            prompts_1.log.info(`Selected ${languages.length} language(s): ${languages.join(', ')}`);
         }
         let token = options.token;
         if (!token && process.env.GITHUB_TOKEN) {

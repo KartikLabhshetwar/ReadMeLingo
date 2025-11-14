@@ -1,9 +1,34 @@
 #!/usr/bin/env node
 
+import { config } from 'dotenv';
+import { resolve, join } from 'path';
+import { existsSync } from 'fs';
 import { Command } from 'commander';
 import { intro, outro, cancel, isCancel, text, confirm, multiselect, select, log } from '@clack/prompts';
 import { translateRepo } from './commands/translate';
 import * as packageJson from '../package.json';
+
+const findEnvFile = (): string | undefined => {
+  const possiblePaths = [
+    join(process.cwd(), '.env'),
+    resolve(__dirname, '../../.env'),
+    resolve(__dirname, '../.env'),
+  ];
+
+  for (const envPath of possiblePaths) {
+    if (existsSync(envPath)) {
+      return envPath;
+    }
+  }
+  return undefined;
+};
+
+const envPath = findEnvFile();
+if (envPath) {
+  config({ path: envPath });
+} else {
+  config();
+}
 
 const version = packageJson.version;
 
@@ -95,13 +120,20 @@ async function handleTranslate() {
     message: 'Select target languages',
     options: languageOptions,
     required: true,
-    initialValues: ['es', 'fr', 'de'],
   });
 
   if (isCancel(selectedLanguages)) {
     cancel('Operation cancelled.');
     process.exit(0);
   }
+
+  if (!selectedLanguages || (Array.isArray(selectedLanguages) && selectedLanguages.length === 0)) {
+    cancel('No languages selected. Please select at least one language.');
+    process.exit(1);
+  }
+
+  const selectedLangs = Array.isArray(selectedLanguages) ? selectedLanguages : [selectedLanguages];
+  log.info(`Selected ${selectedLangs.length} language(s): ${selectedLangs.join(', ')}`);
 
   const outputDir = await text({
     message: 'Output directory for translated files',
@@ -153,11 +185,11 @@ async function handleTranslate() {
   }
 
   log.info('\nStarting translation process...\n');
-
+  
   await translateRepo({
     repoUrl: repoUrl as string,
     token,
-    languages: selectedLanguages as string[],
+    languages: selectedLangs as string[],
     outputDir: outputDir as string,
     includeContributing: (filesToInclude as string[]).includes('contributing'),
     includeDocs: (filesToInclude as string[]).includes('docs'),
@@ -171,7 +203,7 @@ program
   .description('Translate repository documentation files')
   .option('-r, --repo <repo>', 'GitHub repository URL or owner/repo')
   .option('-t, --token <token>', 'GitHub personal access token (for private repos)')
-  .option('-l, --languages <languages>', 'Comma-separated list of target languages (default: es,fr,de)')
+  .option('-l, --languages <languages>', 'Comma-separated list of target languages')
   .option('-o, --output <dir>', 'Output directory for translated files (default: ./translations)')
   .option('--include-contributing', 'Include CONTRIBUTING.md', false)
   .option('--include-docs', 'Include /docs folder', false)
@@ -184,11 +216,13 @@ program
     intro('🌍 ReadMeLingo - Translation CLI');
 
     try {
-      let languages = options.languages
-        ? options.languages.split(',').map((l: string) => l.trim())
-        : ['es', 'fr', 'de'];
+      let languages: string[] = [];
 
-      if (!options.languages) {
+      if (options.languages) {
+        languages = options.languages.split(',').map((l: string) => l.trim()).filter((l: string) => l.length > 0);
+      }
+
+      if (!options.languages || languages.length === 0) {
         const languageOptions = [
           { value: 'es', label: '🇪🇸 Spanish (es)' },
           { value: 'fr', label: '🇫🇷 French (fr)' },
@@ -204,7 +238,6 @@ program
           message: 'Select target languages',
           options: languageOptions,
           required: true,
-          initialValues: ['es', 'fr', 'de'],
         });
 
         if (isCancel(selected)) {
@@ -212,7 +245,13 @@ program
           process.exit(0);
         }
 
-        languages = selected as string[];
+        if (!selected || (Array.isArray(selected) && selected.length === 0)) {
+          cancel('No languages selected. Please select at least one language.');
+          process.exit(1);
+        }
+
+        languages = Array.isArray(selected) ? selected : [selected];
+        log.info(`Selected ${languages.length} language(s): ${languages.join(', ')}`);
       }
 
       let token = options.token;

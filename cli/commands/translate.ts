@@ -1,13 +1,12 @@
 import { spinner, log, tasks } from '@clack/prompts';
-import { promises as fs } from 'fs';
-import { join } from 'path';
 import { parseRepoUrl, fetchReadme, fetchFile, fetchDirectory } from '../../lib/github';
+import { parseAndValidateMarkdown } from '../../lib/markdown';
 import {
   createTempWorkspace,
   writeFilesToWorkspace,
   createI18nConfig,
   runLingoCLI,
-  readTranslatedFiles,
+  copyTranslatedFilesFromWorkspace,
   cleanupWorkspace,
 } from '../../lib/lingo';
 
@@ -37,10 +36,11 @@ export async function translateRepo(options: TranslateOptions): Promise<void> {
   try {
     const readme = await fetchReadme(repoInfo.owner, repoInfo.repo, options.token);
     if (readme) {
+      const parsedContent = parseAndValidateMarkdown(readme.content);
       files.push({
         name: readme.name,
         path: readme.path,
-        content: readme.content,
+        content: parsedContent,
         size: readme.size,
       });
     }
@@ -48,10 +48,11 @@ export async function translateRepo(options: TranslateOptions): Promise<void> {
     if (options.includeContributing) {
       const contributing = await fetchFile(repoInfo.owner, repoInfo.repo, 'CONTRIBUTING.md', options.token);
       if (contributing) {
+        const parsedContent = parseAndValidateMarkdown(contributing.content);
         files.push({
           name: contributing.name,
           path: contributing.path,
-          content: contributing.content,
+          content: parsedContent,
           size: contributing.size,
         });
       }
@@ -60,12 +61,15 @@ export async function translateRepo(options: TranslateOptions): Promise<void> {
     if (options.includeDocs) {
       try {
         const docsFiles = await fetchDirectory(repoInfo.owner, repoInfo.repo, 'docs', options.token);
-        files.push(...docsFiles.map(f => ({
-          name: f.name,
-          path: f.path,
-          content: f.content,
-          size: f.size,
-        })));
+        files.push(...docsFiles.map(f => {
+          const parsedContent = parseAndValidateMarkdown(f.content);
+          return {
+            name: f.name,
+            path: f.path,
+            content: parsedContent,
+            size: f.size,
+          };
+        }));
       } catch (error) {
         log.warn('Could not fetch /docs folder');
       }
@@ -88,7 +92,7 @@ export async function translateRepo(options: TranslateOptions): Promise<void> {
   }
 
   let workspace: string | null = null;
-  let translatedFiles: Array<{ path: string; content: string; locale: string }> = [];
+  let copiedFiles: Array<{ path: string; locale: string; fileName: string }> = [];
 
   try {
     await tasks([
@@ -102,6 +106,10 @@ export async function translateRepo(options: TranslateOptions): Promise<void> {
       {
         title: 'Preparing files for translation',
         task: async () => {
+          if (!options.languages || options.languages.length === 0) {
+            throw new Error('No target languages specified');
+          }
+
           const fileMap = new Map<string, string>();
           const includePatterns: string[] = [];
 
@@ -112,53 +120,48 @@ export async function translateRepo(options: TranslateOptions): Promise<void> {
 
           await writeFilesToWorkspace(workspace!, fileMap);
           await createI18nConfig(workspace!, 'en', options.languages, includePatterns);
+          
+          log.info(`Configuration: ${options.languages.length} language(s) - ${options.languages.join(', ')}`);
           return 'Files prepared';
         },
       },
       {
         title: `Translating to ${options.languages.length} language(s)`,
         task: async () => {
-          await runLingoCLI(workspace!, apiKey, 120000);
+          const timeoutMs = 600000;
+          let lastOutput = '';
+          
+          await runLingoCLI(workspace!, apiKey, timeoutMs, (output) => {
+            lastOutput = output;
+            if (output.includes('Error') || output.includes('Failed') || output.includes('Canceled')) {
+              log.warn(output.trim());
+            }
+          });
           return 'Translation completed';
         },
       },
       {
-        title: 'Reading translated files',
+        title: `Copying translated files to ${options.outputDir}`,
         task: async () => {
           const sourceFilePaths = files.map(f => f.path);
-          translatedFiles = await readTranslatedFiles(workspace!, sourceFilePaths, options.languages);
+          copiedFiles = await copyTranslatedFilesFromWorkspace(
+            workspace!,
+            sourceFilePaths,
+            options.languages,
+            options.outputDir
+          );
 
-          if (translatedFiles.length === 0) {
-            throw new Error('Translation completed but no files were generated. Check Lingo.dev configuration.');
+          if (copiedFiles.length === 0) {
+            throw new Error('Translation completed but no files were found. Check Lingo.dev output location.');
           }
 
-          return `Generated ${translatedFiles.length} translation(s)`;
-        },
-      },
-      {
-        title: `Saving files to ${options.outputDir}`,
-        task: async () => {
-          await fs.mkdir(options.outputDir, { recursive: true });
-
-          for (const translatedFile of translatedFiles) {
-            const sourceFileName = translatedFile.path.split('/').pop() || 'README.md';
-            const baseName = sourceFileName.replace(/\.md$/, '').replace(/\.\w+$/, '');
-            const outputFileName = `${baseName}.${translatedFile.locale}.md`;
-            const outputPath = join(options.outputDir, outputFileName);
-            
-            await fs.writeFile(outputPath, translatedFile.content, 'utf-8');
-          }
-
-          log.success(`Files saved to ${options.outputDir}`);
+          log.success(`Files copied to ${options.outputDir}`);
           log.info('\nTranslated files:');
-          translatedFiles.forEach(tf => {
-            const sourceFileName = tf.path.split('/').pop() || 'README.md';
-            const baseName = sourceFileName.replace(/\.md$/, '').replace(/\.\w+$/, '');
-            const outputFileName = `${baseName}.${tf.locale}.md`;
-            log.step(`${outputFileName} (${tf.locale})`);
+          copiedFiles.forEach(cf => {
+            log.step(`${cf.fileName} (${cf.locale})`);
           });
 
-          return `Files saved successfully`;
+          return `Copied ${copiedFiles.length} file(s) successfully`;
         },
       },
     ]);

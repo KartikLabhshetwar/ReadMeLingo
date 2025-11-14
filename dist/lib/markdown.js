@@ -5,6 +5,7 @@ exports.decodeBase64 = decodeBase64;
 exports.getFileExtension = getFileExtension;
 exports.isMarkdownFile = isMarkdownFile;
 exports.formatFileSize = formatFileSize;
+exports.parseAndValidateMarkdown = parseAndValidateMarkdown;
 function extractMarkdownFiles(files) {
     return files.filter(file => file.type === 'file' && file.name.endsWith('.md'));
 }
@@ -25,4 +26,18 @@ function formatFileSize(bytes) {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+}
+function parseAndValidateMarkdown(content) {
+    if (!content || content.trim().length === 0) {
+        throw new Error('Markdown content is empty');
+    }
+    const trimmed = content.trim();
+    if (trimmed.length < 10) {
+        throw new Error('Markdown content is too short to be valid');
+    }
+    const normalized = trimmed
+        .replace(/\r\n/g, '\n')
+        .replace(/\r/g, '\n')
+        .replace(/\n{3,}/g, '\n\n');
+    return normalized;
 }

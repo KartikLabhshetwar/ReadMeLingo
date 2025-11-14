@@ -29,3 +29,22 @@ export function formatFileSize(bytes: number): string {
   return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
 }
 
+export function parseAndValidateMarkdown(content: string): string {
+  if (!content || content.trim().length === 0) {
+    throw new Error('Markdown content is empty');
+  }
+
+  const trimmed = content.trim();
+  
+  if (trimmed.length < 10) {
+    throw new Error('Markdown content is too short to be valid');
+  }
+
+  const normalized = trimmed
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+    .replace(/\n{3,}/g, '\n\n');
+
+  return normalized;
+}
+
