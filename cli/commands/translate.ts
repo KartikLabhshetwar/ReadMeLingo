@@ -130,15 +130,21 @@ export async function translateRepo(options: TranslateOptions): Promise<void> {
           }
 
           const fileMap = new Map<string, string>();
-          const includePatterns: string[] = [];
+          const sourceLocale = 'en';
 
           for (const file of files) {
-            fileMap.set(file.path, file.content);
-            includePatterns.push(file.path);
+            const fileName = file.path.split('/').pop() || file.path;
+            fileMap.set(fileName, file.content);
           }
 
-          await writeFilesToWorkspace(workspace!, fileMap);
-          await createI18nConfig(workspace!, 'en', options.languages, includePatterns);
+          await writeFilesToWorkspace(workspace!, fileMap, sourceLocale);
+          await createI18nConfig(workspace!, sourceLocale, options.languages, files.length);
+          
+          const { promises: fs } = await import('fs');
+          const { join } = await import('path');
+          const configPath = join(workspace!, 'i18n.json');
+          const configContent = await fs.readFile(configPath, 'utf-8');
+          log.info(`i18n.json configuration:\n${configContent}`);
           
           log.info(`Configuration: ${options.languages.length} language(s) - ${options.languages.join(', ')}`);
           return 'Files prepared';
@@ -148,30 +154,99 @@ export async function translateRepo(options: TranslateOptions): Promise<void> {
         title: `Translating to ${options.languages.length} language(s)`,
         task: async () => {
           const timeoutMs = 600000;
-          let lastOutput = '';
+          let allOutput = '';
           
-          await runLingoCLI(workspace!, apiKey, timeoutMs, (output) => {
-            lastOutput = output;
+          const result = await runLingoCLI(workspace!, apiKey, timeoutMs, (output) => {
+            allOutput += output;
             if (output.includes('Error') || output.includes('Failed') || output.includes('Canceled')) {
               log.warn(output.trim());
             }
           });
+          
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          if (result.stdout) {
+            const stdoutLines = result.stdout.split('\n').filter(l => l.trim());
+            const hasSuccess = stdoutLines.some(l => 
+              l.includes('completed') || 
+              l.includes('✅') || 
+              l.includes('Success') ||
+              l.includes('translated')
+            );
+            if (!hasSuccess && stdoutLines.length > 0) {
+              log.info('Lingo.dev CLI output:');
+              stdoutLines.slice(-10).forEach(line => log.info(`  ${line}`));
+            }
+          }
+          
+          const combinedOutput = result.stdout + result.stderr;
+          
+          if (combinedOutput.includes('No changes detected') || combinedOutput.includes('skipped')) {
+            log.warn('Translation may have been skipped - no changes detected');
+          }
+          
+          const { listWorkspaceFiles } = await import('../../lib/lingo');
+          const filesAfterTranslation = await listWorkspaceFiles(workspace!);
+          const mdFilesAfter = filesAfterTranslation.filter(f => f.endsWith('.md') && !f.includes('i18n.lock'));
+          
+          if (mdFilesAfter.length > 0) {
+            log.info(`Files in workspace after translation: ${mdFilesAfter.join(', ')}`);
+          }
+          
           return 'Translation completed';
         },
       },
       {
         title: `Copying translated files to ${options.outputDir}`,
         task: async () => {
-          const sourceFilePaths = files.map(f => f.path);
+          const { listWorkspaceFiles } = await import('../../lib/lingo');
+          const allFiles = await listWorkspaceFiles(workspace!);
+          const mdFiles = allFiles.filter(f => f.endsWith('.md') && !f.includes('i18n.lock'));
+          
+          log.info(`Workspace contains ${allFiles.length} file(s) total`);
+          if (mdFiles.length > 0) {
+            log.info(`Found ${mdFiles.length} markdown file(s): ${mdFiles.join(', ')}`);
+          } else {
+            log.warn('No markdown files found in workspace');
+          }
+          
+          const sourceFileNames = files.map(f => {
+            const fileName = f.path.split('/').pop() || f.path;
+            return fileName;
+          });
+          
+          log.info(`Looking for translations of: ${sourceFileNames.join(', ')}`);
+          log.info(`Target locales: ${options.languages.join(', ')}`);
+          
           copiedFiles = await copyTranslatedFilesFromWorkspace(
             workspace!,
-            sourceFilePaths,
+            sourceFileNames,
             options.languages,
             options.outputDir
           );
 
           if (copiedFiles.length === 0) {
-            throw new Error('Translation completed but no files were found. Check Lingo.dev output location.');
+            const errorMsg = [
+              'Translation completed but no translated files were found.',
+              '',
+              `Workspace structure:`,
+              `  Total files: ${allFiles.length}`,
+              `  Markdown files: ${mdFiles.length}`,
+              mdFiles.length > 0 ? `  Files found: ${mdFiles.map(f => `    - ${f}`).join('\n')}` : '  No markdown files found',
+              '',
+              `Expected translations:`,
+              `  Source files: ${sourceFileNames.join(', ')}`,
+              `  Target locales: ${options.languages.join(', ')}`,
+              `  Expected locations: ${options.languages.map(locale => sourceFileNames.map(f => `    - ${locale}/${f}`).join('\n')).join('\n')}`,
+              '',
+              'This might indicate:',
+              '  1. Translation was skipped (no changes detected)',
+              '  2. Translation failed silently',
+              '  3. Files were created in a different location',
+              '',
+              'Check the Lingo.dev CLI output above for details.',
+            ].join('\n');
+            throw new Error(errorMsg);
           }
 
           log.success(`Files copied to ${options.outputDir}`);

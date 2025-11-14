@@ -21,13 +21,15 @@ export async function createTempWorkspace(): Promise<string> {
 
 export async function writeFilesToWorkspace(
   workspace: string,
-  files: Map<string, string>
+  files: Map<string, string>,
+  sourceLocale: string = 'en'
 ): Promise<void> {
   for (const [path, content] of files.entries()) {
-    const filePath = join(workspace, path);
-    const dir = dirname(filePath);
+    const fileName = path.split('/').pop() || path;
+    const localeDir = join(workspace, sourceLocale);
+    const filePath = join(localeDir, fileName);
     
-    await fs.mkdir(dir, { recursive: true, mode: 0o755 });
+    await fs.mkdir(localeDir, { recursive: true, mode: 0o755 });
     await fs.writeFile(filePath, content, 'utf-8');
   }
 }
@@ -36,15 +38,13 @@ export async function createI18nConfig(
   workspace: string,
   sourceLocale: string,
   targetLocales: string[],
-  includePatterns: string[]
+  fileCount: number
 ): Promise<void> {
   if (!targetLocales || targetLocales.length === 0) {
     throw new Error('At least one target locale is required');
   }
 
-  if (!includePatterns || includePatterns.length === 0) {
-    throw new Error('At least one include pattern is required');
-  }
+  const includePattern = `${sourceLocale}/*.md`;
 
   const config = {
     $schema: 'https://lingo.dev/schema/i18n.json',
@@ -55,7 +55,7 @@ export async function createI18nConfig(
     },
     buckets: {
       markdown: {
-        include: includePatterns,
+        include: [includePattern],
       },
     },
   };
@@ -77,11 +77,7 @@ export async function runLingoCLI(
   onOutput?: (data: string) => void
 ): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
-    console.log('\n[DEBUG] Running Lingo CLI with command: npx -y lingo.dev@latest run');
-    console.log('[DEBUG] Workspace:', workspace);
-    console.log('[DEBUG] API Key set:', !!apiKey);
-    
-    const child = spawn('npx', ['-y', 'lingo.dev@latest', 'run'], {
+    const child = spawn('npx', ['-y', 'lingo.dev@latest', 'run', '--force'], {
       cwd: workspace,
       env: {
         ...process.env,
@@ -93,23 +89,23 @@ export async function runLingoCLI(
     let stdout = '';
     let stderr = '';
     let lastActivity = Date.now();
-    const activityCheckInterval = 30000;
+    const activityCheckInterval = 120000;
 
     const activityMonitor = setInterval(() => {
       const timeSinceLastActivity = Date.now() - lastActivity;
       if (timeSinceLastActivity > activityCheckInterval) {
         const output = stdout || stderr || 'No output received';
-        reject(new Error(`Lingo CLI appears to be stuck. Last activity: ${Math.floor(timeSinceLastActivity / 1000)}s ago.\nOutput so far:\n${output}`));
+        const lastOutput = output.split('\n').slice(-5).join('\n');
+        reject(new Error(`Lingo CLI appears to be stuck. Last activity: ${Math.floor(timeSinceLastActivity / 1000)}s ago.\nLast output:\n${lastOutput}`));
         clearInterval(activityMonitor);
         child.kill('SIGTERM');
       }
-    }, activityCheckInterval);
+    }, 30000);
 
     child.stdout?.on('data', (data) => {
       const output = data.toString();
       stdout += output;
       lastActivity = Date.now();
-      console.log('[LINGO STDOUT]', output);
       if (onOutput) {
         onOutput(output);
       }
@@ -119,7 +115,6 @@ export async function runLingoCLI(
       const output = data.toString();
       stderr += output;
       lastActivity = Date.now();
-      console.log('[LINGO STDERR]', output);
       if (onOutput) {
         onOutput(output);
       }
@@ -140,10 +135,6 @@ export async function runLingoCLI(
       clearTimeout(timeout);
       clearInterval(activityMonitor);
       
-      console.log('[DEBUG] Lingo CLI closed with code:', code, 'signal:', signal);
-      console.log('[DEBUG] Full stdout:', stdout);
-      console.log('[DEBUG] Full stderr:', stderr);
-      
       const combinedOutput = stdout + stderr;
       
       if (combinedOutput.includes('Authentication failed') || combinedOutput.includes('FAILED: Authentication')) {
@@ -153,10 +144,35 @@ export async function runLingoCLI(
           'To fix this:\n' +
           '1. Visit https://lingo.dev/auth\n' +
           '2. Get a valid API key from Projects > API Key\n' +
-          '3. Set it: export LINGODOTDEV_API_KEY="your-key"\n\n' +
-          `Full output:\n${combinedOutput}`
+          '3. Set it: export LINGODOTDEV_API_KEY="your-key"'
         ));
         return;
+      }
+      
+      if (combinedOutput.includes('Failed Files') || combinedOutput.includes('❌')) {
+        const failedMatch = combinedOutput.match(/\[Failed Files\]([\s\S]*?)(?=\n\n|\n\[|$)/);
+        const quotaMatch = combinedOutput.match(/Maximum number of translated words.*?Please upgrade/);
+        
+        if (quotaMatch) {
+          reject(new Error(
+            'Lingo.dev free plan quota exceeded.\n\n' +
+            quotaMatch[0] + '\n\n' +
+            'To continue:\n' +
+            '1. Visit https://lingo.dev to upgrade your plan\n' +
+            '2. Or wait for your quota to reset\n' +
+            '3. Or reduce the amount of content to translate'
+          ));
+          return;
+        }
+        
+        if (failedMatch) {
+          reject(new Error(
+            'Translation failed for some files.\n\n' +
+            failedMatch[0].trim() + '\n\n' +
+            'Check the output above for details.'
+          ));
+          return;
+        }
       }
       
       if (code === 0) {
@@ -249,6 +265,79 @@ export async function cleanupWorkspace(workspace: string): Promise<void> {
   }
 }
 
+function findTranslatedFile(
+  allFiles: string[],
+  sourceFile: string,
+  locale: string
+): string | null {
+  const fileName = sourceFile.split('/').pop() || sourceFile;
+  const fileNameWithoutExt = fileName.replace(/\.md$/, '');
+  
+  const normalizedFiles = allFiles.map(f => ({
+    original: f,
+    normalized: f.replace(/\\/g, '/').toLowerCase()
+  }));
+  
+  const localeLower = locale.toLowerCase();
+  const fileNameLower = fileName.toLowerCase();
+  const fileNameWithoutExtLower = fileNameWithoutExt.toLowerCase();
+  
+  const exactPatterns = [
+    `${locale}/${fileName}`,
+    `${locale}/${fileNameWithoutExt}.md`,
+    `markdown/${locale}/${fileName}`,
+    `markdown/${locale}/${fileNameWithoutExt}.md`,
+  ];
+  
+  for (const pattern of exactPatterns) {
+    const normalizedPattern = pattern.toLowerCase();
+    const found = normalizedFiles.find(({ normalized }) => 
+      normalized === normalizedPattern
+    );
+    if (found) {
+      return found.original;
+    }
+  }
+  
+  const matchingFiles = normalizedFiles.filter(({ normalized }) => {
+    const hasLocaleDir = normalized.includes(`/${localeLower}/`) || 
+                         normalized.startsWith(`${localeLower}/`) ||
+                         normalized.includes(`markdown/${localeLower}/`);
+    
+    if (!hasLocaleDir) {
+      return false;
+    }
+    
+    const endsWithFileName = normalized.endsWith(`/${fileNameLower}`) ||
+                             normalized.endsWith(`/${fileNameWithoutExtLower}.md`) ||
+                             normalized === `${localeLower}/${fileNameLower}` ||
+                             normalized === `${localeLower}/${fileNameWithoutExtLower}.md` ||
+                             normalized.endsWith(`markdown/${localeLower}/${fileNameLower}`) ||
+                             normalized.endsWith(`markdown/${localeLower}/${fileNameWithoutExtLower}.md`);
+    
+    return endsWithFileName;
+  });
+  
+  if (matchingFiles.length === 1) {
+    return matchingFiles[0].original;
+  }
+  
+  if (matchingFiles.length > 1) {
+    const exactMatch = matchingFiles.find(({ normalized }) => 
+      normalized === `${localeLower}/${fileNameLower}` ||
+      normalized === `${localeLower}/${fileNameWithoutExtLower}.md` ||
+      normalized === `markdown/${localeLower}/${fileNameLower}` ||
+      normalized === `markdown/${localeLower}/${fileNameWithoutExtLower}.md`
+    );
+    if (exactMatch) {
+      return exactMatch.original;
+    }
+    return matchingFiles[0].original;
+  }
+  
+  return null;
+}
+
 export async function copyTranslatedFilesFromWorkspace(
   workspace: string,
   sourceFiles: string[],
@@ -256,50 +345,60 @@ export async function copyTranslatedFilesFromWorkspace(
   outputDir: string
 ): Promise<Array<{ path: string; locale: string; fileName: string }>> {
   const copiedFiles: Array<{ path: string; locale: string; fileName: string }> = [];
-
-  console.log('\n[DEBUG] Listing all files in workspace before copying:');
+  
   const allWorkspaceFiles = await listWorkspaceFiles(workspace);
-  console.log('[DEBUG] All files:', allWorkspaceFiles);
+  const markdownFiles = allWorkspaceFiles.filter(f => f.endsWith('.md') && !f.includes('i18n.lock'));
   
   for (const sourceFile of sourceFiles) {
     const fileName = sourceFile.split('/').pop() || sourceFile;
-    const baseName = sourceFile.replace(/\.md$/, '');
     const fileNameWithoutExt = fileName.replace(/\.md$/, '');
 
-    console.log(`\n[DEBUG] Processing source file: ${sourceFile}`);
-    console.log(`[DEBUG] baseName: ${baseName}, fileName: ${fileName}`);
-
     for (const locale of targetLocales) {
-      const translatedFileName = `${baseName}.${locale}.md`;
-      const sourcePath = join(workspace, translatedFileName);
+      const translatedFilePath = findTranslatedFile(markdownFiles, sourceFile, locale);
       
-      console.log(`[DEBUG] Looking for translated file at: ${sourcePath}`);
-      
-      try {
-        await fs.access(sourcePath);
-        const content = await fs.readFile(sourcePath, 'utf-8');
-        const outputFileName = `${fileNameWithoutExt}.${locale}.md`;
-        const outputPath = join(outputDir, outputFileName);
+      if (translatedFilePath) {
+        const sourcePath = join(workspace, translatedFilePath);
         
-        await fs.mkdir(outputDir, { recursive: true });
-        await fs.writeFile(outputPath, content, 'utf-8');
-        
-        console.log(`[DEBUG] Successfully copied ${translatedFileName} to ${outputPath}`);
-        
-        copiedFiles.push({
-          path: outputPath,
-          locale,
-          fileName: outputFileName,
-        });
-      } catch (error) {
-        const allFiles = await listWorkspaceFiles(workspace);
-        const mdFiles = allFiles.filter(f => f.endsWith('.md'));
-        console.warn(`Warning: Could not find translated file for ${sourceFile} in locale ${locale}`);
-        console.warn(`Available markdown files in workspace: ${mdFiles.join(', ')}`);
+        try {
+          const content = await fs.readFile(sourcePath, 'utf-8');
+          const outputFileName = `${fileNameWithoutExt}.${locale}.md`;
+          const outputPath = join(outputDir, outputFileName);
+          
+          await fs.mkdir(outputDir, { recursive: true });
+          await fs.writeFile(outputPath, content, 'utf-8');
+          
+          copiedFiles.push({
+            path: outputPath,
+            locale,
+            fileName: outputFileName,
+          });
+        } catch (error) {
+          console.warn(`Failed to read translated file at ${translatedFilePath}:`, error);
+        }
+      }
+    }
+  }
+
+  if (copiedFiles.length === 0 && markdownFiles.length > 0) {
+    console.warn(`No translated files matched. Found ${markdownFiles.length} markdown file(s) in workspace:`);
+    markdownFiles.forEach(f => console.warn(`  - ${f}`));
+    console.warn(`Looking for ${sourceFiles.length} source file(s):`);
+    sourceFiles.forEach(f => console.warn(`  - ${f}`));
+    console.warn(`Target locales: ${targetLocales.join(', ')}`);
+    
+    for (const sourceFile of sourceFiles) {
+      const fileName = sourceFile.split('/').pop() || sourceFile;
+      for (const locale of targetLocales) {
+        const searchedPatterns = [
+          `${locale}/${fileName}`,
+          `${locale}/${fileName.replace(/\.md$/, '')}.md`,
+        ];
+        console.warn(`  Searched for: ${searchedPatterns.join(', ')}`);
       }
     }
   }
 
   return copiedFiles;
 }
+
 
