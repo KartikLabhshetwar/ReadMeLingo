@@ -48,7 +48,7 @@ export async function createI18nConfig(
 
   const config = {
     $schema: 'https://lingo.dev/schema/i18n.json',
-    version: '1.0',
+    version: '1.10',
     locale: {
       source: sourceLocale,
       targets: targetLocales,
@@ -56,14 +56,7 @@ export async function createI18nConfig(
     buckets: {
       markdown: {
         include: includePatterns,
-        type: 'markdown',
-        output: {
-          mode: 'files',
-        },
       },
-    },
-    provider: {
-      default: 'lingo.dev',
     },
   };
 
@@ -84,6 +77,10 @@ export async function runLingoCLI(
   onOutput?: (data: string) => void
 ): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
+    console.log('\n[DEBUG] Running Lingo CLI with command: npx -y lingo.dev@latest run');
+    console.log('[DEBUG] Workspace:', workspace);
+    console.log('[DEBUG] API Key set:', !!apiKey);
+    
     const child = spawn('npx', ['-y', 'lingo.dev@latest', 'run'], {
       cwd: workspace,
       env: {
@@ -112,6 +109,7 @@ export async function runLingoCLI(
       const output = data.toString();
       stdout += output;
       lastActivity = Date.now();
+      console.log('[LINGO STDOUT]', output);
       if (onOutput) {
         onOutput(output);
       }
@@ -121,6 +119,7 @@ export async function runLingoCLI(
       const output = data.toString();
       stderr += output;
       lastActivity = Date.now();
+      console.log('[LINGO STDERR]', output);
       if (onOutput) {
         onOutput(output);
       }
@@ -141,7 +140,26 @@ export async function runLingoCLI(
       clearTimeout(timeout);
       clearInterval(activityMonitor);
       
-      if (code === 0 || (code === null && signal === 'SIGTERM' && stdout.includes('✔'))) {
+      console.log('[DEBUG] Lingo CLI closed with code:', code, 'signal:', signal);
+      console.log('[DEBUG] Full stdout:', stdout);
+      console.log('[DEBUG] Full stderr:', stderr);
+      
+      const combinedOutput = stdout + stderr;
+      
+      if (combinedOutput.includes('Authentication failed') || combinedOutput.includes('FAILED: Authentication')) {
+        reject(new Error(
+          'Lingo.dev authentication failed.\n\n' +
+          'Your API key may be invalid or expired.\n\n' +
+          'To fix this:\n' +
+          '1. Visit https://lingo.dev/auth\n' +
+          '2. Get a valid API key from Projects > API Key\n' +
+          '3. Set it: export LINGODOTDEV_API_KEY="your-key"\n\n' +
+          `Full output:\n${combinedOutput}`
+        ));
+        return;
+      }
+      
+      if (code === 0) {
         resolve({ stdout, stderr });
       } else {
         const errorMsg = stderr || stdout || 'Unknown error';
@@ -167,44 +185,24 @@ export async function readTranslatedFiles(
 
   for (const sourceFile of sourceFiles) {
     const baseName = sourceFile.replace(/\.md$/, '');
-    const extension = '.md';
-    const fileName = sourceFile.split('/').pop() || sourceFile;
-    const dirPath = sourceFile.includes('/') ? sourceFile.substring(0, sourceFile.lastIndexOf('/')) : '';
 
     for (const locale of targetLocales) {
-      const possiblePaths = [
-        join(locale, sourceFile),
-        join(locale, fileName),
-        dirPath ? join(locale, dirPath, fileName) : join(locale, fileName),
-        `${baseName}.${locale}${extension}`,
-        `${baseName}.${locale}.md`,
-        `${fileName.replace(/\.md$/, '')}.${locale}.md`,
-        join('.lingo', locale, sourceFile),
-        join('.lingo', locale, fileName),
-        join('lingo', locale, sourceFile),
-        join('lingo', locale, fileName),
-      ];
-
-      let found = false;
-      for (const possiblePath of possiblePaths) {
-        const fullPath = join(workspace, possiblePath);
-        try {
-          await fs.access(fullPath);
-          const content = await fs.readFile(fullPath, 'utf-8');
-          translatedFiles.push({
-            path: sourceFile.replace(/\.md$/, `.${locale}.md`),
-            locale,
-            content,
-          });
-          found = true;
-          break;
-        } catch {
-          continue;
-        }
-      }
-
-      if (!found) {
-        console.warn(`Warning: Could not find translated file for ${sourceFile} in locale ${locale}. Tried paths: ${possiblePaths.join(', ')}`);
+      const translatedPath = `${baseName}.${locale}.md`;
+      const fullPath = join(workspace, translatedPath);
+      
+      try {
+        await fs.access(fullPath);
+        const content = await fs.readFile(fullPath, 'utf-8');
+        translatedFiles.push({
+          path: translatedPath,
+          locale,
+          content,
+        });
+      } catch (error) {
+        const allFiles = await listWorkspaceFiles(workspace);
+        const mdFiles = allFiles.filter(f => f.endsWith('.md'));
+        console.warn(`Warning: Could not find translated file at ${translatedPath}`);
+        console.warn(`Available markdown files in workspace: ${mdFiles.join(', ')}`);
       }
     }
   }
@@ -259,48 +257,45 @@ export async function copyTranslatedFilesFromWorkspace(
 ): Promise<Array<{ path: string; locale: string; fileName: string }>> {
   const copiedFiles: Array<{ path: string; locale: string; fileName: string }> = [];
 
+  console.log('\n[DEBUG] Listing all files in workspace before copying:');
+  const allWorkspaceFiles = await listWorkspaceFiles(workspace);
+  console.log('[DEBUG] All files:', allWorkspaceFiles);
+  
   for (const sourceFile of sourceFiles) {
     const fileName = sourceFile.split('/').pop() || sourceFile;
-    const baseName = fileName.replace(/\.md$/, '');
-    const dirPath = sourceFile.includes('/') ? sourceFile.substring(0, sourceFile.lastIndexOf('/')) : '';
+    const baseName = sourceFile.replace(/\.md$/, '');
+    const fileNameWithoutExt = fileName.replace(/\.md$/, '');
+
+    console.log(`\n[DEBUG] Processing source file: ${sourceFile}`);
+    console.log(`[DEBUG] baseName: ${baseName}, fileName: ${fileName}`);
 
     for (const locale of targetLocales) {
-      const possiblePaths = [
-        join(locale, sourceFile),
-        join(locale, fileName),
-        dirPath ? join(locale, dirPath, fileName) : join(locale, fileName),
-        join('.lingo', locale, sourceFile),
-        join('.lingo', locale, fileName),
-        join('lingo', locale, sourceFile),
-        join('lingo', locale, fileName),
-      ];
-
-      let found = false;
-      for (const possiblePath of possiblePaths) {
-        const sourcePath = join(workspace, possiblePath);
-        try {
-          await fs.access(sourcePath);
-          const content = await fs.readFile(sourcePath, 'utf-8');
-          const outputFileName = `${baseName}.${locale}.md`;
-          const outputPath = join(outputDir, outputFileName);
-          
-          await fs.mkdir(outputDir, { recursive: true });
-          await fs.writeFile(outputPath, content, 'utf-8');
-          
-          copiedFiles.push({
-            path: outputPath,
-            locale,
-            fileName: outputFileName,
-          });
-          found = true;
-          break;
-        } catch {
-          continue;
-        }
-      }
-
-      if (!found) {
+      const translatedFileName = `${baseName}.${locale}.md`;
+      const sourcePath = join(workspace, translatedFileName);
+      
+      console.log(`[DEBUG] Looking for translated file at: ${sourcePath}`);
+      
+      try {
+        await fs.access(sourcePath);
+        const content = await fs.readFile(sourcePath, 'utf-8');
+        const outputFileName = `${fileNameWithoutExt}.${locale}.md`;
+        const outputPath = join(outputDir, outputFileName);
+        
+        await fs.mkdir(outputDir, { recursive: true });
+        await fs.writeFile(outputPath, content, 'utf-8');
+        
+        console.log(`[DEBUG] Successfully copied ${translatedFileName} to ${outputPath}`);
+        
+        copiedFiles.push({
+          path: outputPath,
+          locale,
+          fileName: outputFileName,
+        });
+      } catch (error) {
+        const allFiles = await listWorkspaceFiles(workspace);
+        const mdFiles = allFiles.filter(f => f.endsWith('.md'));
         console.warn(`Warning: Could not find translated file for ${sourceFile} in locale ${locale}`);
+        console.warn(`Available markdown files in workspace: ${mdFiles.join(', ')}`);
       }
     }
   }

@@ -88,7 +88,26 @@ export async function translateRepo(options: TranslateOptions): Promise<void> {
 
   const apiKey = process.env.LINGODOTDEV_API_KEY;
   if (!apiKey) {
-    throw new Error('LINGODOTDEV_API_KEY environment variable is required');
+    throw new Error(
+      'LINGODOTDEV_API_KEY environment variable is required.\n\n' +
+      'To get your API key:\n' +
+      '1. Visit https://lingo.dev/auth\n' +
+      '2. Navigate to Projects > Your Project > API Key\n' +
+      '3. Copy the API key\n' +
+      '4. Add it to .env file in project root:\n' +
+      '   LINGODOTDEV_API_KEY="your-api-key-here"\n' +
+      '   Or set as environment variable:\n' +
+      '   export LINGODOTDEV_API_KEY="your-api-key-here"\n\n' +
+      'Or add to ~/.zshrc or ~/.bashrc for persistence.'
+    );
+  }
+  
+  if (apiKey.length < 20 || !apiKey.includes('_')) {
+    throw new Error(
+      'Invalid LINGODOTDEV_API_KEY format.\n' +
+      'API key should be in format "api_..." or "lingo_...".\n' +
+      'Please check your API key at https://lingo.dev/auth'
+    );
   }
 
   let workspace: string | null = null;
