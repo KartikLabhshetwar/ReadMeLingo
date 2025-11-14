@@ -1,160 +1,257 @@
-# ReadMeLingo 🌍
+# ReadMeLingo
 
-> Translate GitHub repository documentation into multiple languages using Lingo.dev CLI + Web Preview
+Translate GitHub repository documentation into multiple languages using Lingo.dev CLI
 
-ReadMeLingo consists of two parts:
-- **CLI Tool**: Run locally to translate repository documentation using Lingo.dev
-- **Web App**: Preview, download, and create PRs with translated files
+ReadMeLingo is a CLI tool that translates repository documentation files locally, ensuring fast, reliable translations that work everywhere
 
-This architecture ensures fast, reliable translations that work everywhere (including serverless deployments).
+## Features
 
-## ✨ Features
+- **Fast Translation**: Run locally with no timeout limits
+- **8+ Languages**: Support for Spanish, French, German, Italian, Portuguese, Japanese, Korean, and Chinese
+- **Flexible Output**: Save translations to any directory
+- **Works Everywhere**: Run on your machine, CI/CD, or anywhere Node.js runs
+- **Interactive Mode**: User-friendly prompts for easy configuration
+- **Batch Processing**: Translate multiple files including README, CONTRIBUTING, and docs folder
 
-### CLI Tool
-- 🚀 **Fast Translation**: Run locally with no timeout limits
-- 🌐 **10+ Languages**: Support for Spanish, French, German, Portuguese, Japanese, Chinese, Hindi, Arabic, Russian, and Bengali
-- 📁 **Flexible Output**: Save translations to any directory
-- 🔧 **Works Everywhere**: Run on your machine, CI/CD, or anywhere Node.js runs
-
-### Web App
-- 👀 **Live Preview**: View rendered markdown translations
-- 📦 **Bulk Download**: Download all translations as a ZIP file
-- 🔄 **PR Creation**: Automatically create pull requests with translated files
-- 📤 **File Upload**: Upload CLI-generated translations for preview
-- 🎨 **Beautiful UI**: Modern, responsive interface built with Next.js and shadcn/ui
-
-## 🚀 Getting Started
-
-### Prerequisites
+## Prerequisites
 
 - Node.js 18+ installed
 - A Lingo.dev API key (get one at [lingo.dev](https://lingo.dev))
-- (Optional) GitHub Personal Access Token for private repos and PR creation
+- (Optional) GitHub Personal Access Token for private repositories
 
-### Installation
+## Installation
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/yourusername/readmelingo.git
 cd readmelingo
 ```
 
 2. Install dependencies:
+
 ```bash
 npm install
 ```
 
-3. Create a `.env.local` file:
+3. Set your Lingo.dev API key:
+
 ```bash
-cp .env.example .env.local
+export LINGODOTDEV_API_KEY=your_api_key_here
 ```
 
-4. Add your API keys to `.env.local`:
-```env
-LINGODOTDEV_API_KEY=your_lingo_api_key_here
+Or create a `.env` file:
+
+```bash
+LINGODOTDEV_API_KEY=your_api_key_here
 GITHUB_TOKEN=your_github_token_here  # Optional
 ```
 
-5. Run the development server:
+## CLI Usage
+
+### Quick Start
+
+The fastest way to get started:
+
 ```bash
-npm run dev
+export LINGODOTDEV_API_KEY=your_api_key_here
+npm run cli translate -- --repo owner/repo
 ```
 
-6. Open [http://localhost:3000](http://localhost:3000) in your browser
+Translated files will be saved to `./translations/` by default.
 
-## 📖 How to Use
+### Basic Translation
 
-### Option 1: CLI + Web App (Recommended)
+Translate a repository's README to default languages (Spanish, French, German):
 
-1. **Run CLI to translate**:
-   ```bash
-   export LINGODOTDEV_API_KEY=your_key_here
-   npm run cli translate -- --repo owner/repo --languages es,fr,de
-   ```
-
-2. **Upload to web app**:
-   - Start web app: `npm run dev`
-   - Click "Upload Translated Files"
-   - Select all `.md` files from `./translations/`
-
-3. **Preview & Create PR**: Use the web app to preview, download, or create a PR
-
-### Option 2: Web App Only (Limited)
-
-The web app can also fetch and translate directly, but this is slower and may timeout on large files. CLI is recommended for best performance.
-
-## 🏗️ Architecture
-
-### CLI Tool
-- **Language**: TypeScript
-- **CLI Framework**: Commander.js
-- **Translation**: Lingo.dev CLI (runs locally)
-- **GitHub Integration**: GitHub REST API
-- **Output**: Files saved to disk
-
-### Web App
-- **Frontend**: Next.js 16 (App Router), TypeScript, TailwindCSS, shadcn/ui
-- **Backend**: Next.js API Routes (for file upload, PR creation, ZIP generation)
-- **Translation**: Accepts pre-translated files from CLI
-- **GitHub Integration**: GitHub REST API (for PR creation)
-- **Markdown Rendering**: react-markdown with remark-gfm
-
-## 📁 Project Structure
-
-```
-readmelingo/
-├── cli/                  # CLI tool
-│   ├── index.ts         # CLI entry point
-│   └── commands/
-│       └── translate.ts # Translation command
-├── app/                  # Web app
-│   ├── api/             # API routes
-│   │   ├── upload-translations/
-│   │   ├── create-pr/
-│   │   └── download-zip/
-│   ├── preview/          # Preview results page
-│   └── page.tsx          # Landing page
-├── components/           # React components
-│   ├── ui/              # shadcn/ui components
-│   ├── markdown-viewer.tsx
-│   └── translation-preview.tsx
-├── lib/                 # Shared utilities
-│   ├── github.ts        # GitHub API helpers
-│   ├── lingo.ts         # Lingo CLI integration
-│   ├── markdown.ts      # Markdown utilities
-│   └── zip.ts           # ZIP generation
-└── .env.example         # Environment variables template
+```bash
+npm run cli translate -- --repo owner/repo
 ```
 
-## 🔑 Environment Variables
+Or with full URL:
 
-### CLI Tool
+```bash
+npm run cli translate -- --repo https://github.com/owner/repo
+```
+
+### Custom Languages
+
+Specify target languages as a comma-separated list:
+
+```bash
+npm run cli translate -- --repo owner/repo --languages es,fr,de,pt,ja
+```
+
+### Include Additional Files
+
+Include CONTRIBUTING.md and /docs folder:
+
+```bash
+npm run cli translate -- --repo owner/repo --include-contributing --include-docs
+```
+
+### Custom Output Directory
+
+Save translations to a specific directory:
+
+```bash
+npm run cli translate -- --repo owner/repo --output ./my-translations
+```
+
+### Private Repositories
+
+Use a GitHub token for private repos:
+
+```bash
+npm run cli translate -- --repo owner/repo --token ghp_your_token_here
+```
+
+Or set as environment variable:
+
+```bash
+export GITHUB_TOKEN=ghp_your_token_here
+npm run cli translate -- --repo owner/repo
+```
+
+### CLI Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `-r, --repo <repo>` | GitHub repository URL or owner/repo (required) | - |
+| `-t, --token <token>` | GitHub personal access token | - |
+| `-l, --languages <languages>` | Comma-separated target languages | `es,fr,de` |
+| `-o, --output <dir>` | Output directory for translated files | `./translations` |
+| `--include-contributing` | Include CONTRIBUTING.md | `false` |
+| `--include-docs` | Include /docs folder | `false` |
+
+### CLI Examples
+
+Translate Next.js README:
+
+```bash
+npm run cli translate -- --repo vercel/next.js --languages es,fr,de,pt
+```
+
+Translate with all files:
+
+```bash
+npm run cli translate -- \
+  --repo owner/repo \
+  --include-contributing \
+  --include-docs \
+  --languages es,fr,de,ja,zh \
+  --output ./output
+```
+
+Translate private repo:
+
+```bash
+npm run cli translate -- \
+  --repo private-org/private-repo \
+  --token ghp_your_token \
+  --languages es,fr
+```
+
+### CLI Output Structure
+
+Translated files are saved to the output directory (default: `./translations`) with the following structure:
+
+```text
+translations/
+├── README.es.md
+├── README.fr.md
+├── README.de.md
+├── CONTRIBUTING.es.md (if included)
+└── docs/
+    └── guide.es.md (if included)
+```
+
+## Installation as Global CLI
+
+Install ReadMeLingo globally to use it from anywhere:
+
+```bash
+npm install -g readmelingo
+```
+
+Then use it directly:
+
+```bash
+readmelingo translate --repo owner/repo
+```
+
+## Supported Languages
+
+- `es` - Spanish
+- `fr` - French
+- `de` - German
+- `it` - Italian
+- `pt` - Portuguese
+- `ja` - Japanese
+- `ko` - Korean
+- `zh` - Chinese
+
+## Environment Variables
+
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `LINGODOTDEV_API_KEY` | Yes | Your Lingo.dev API key for translations |
 | `GITHUB_TOKEN` | No | GitHub Personal Access Token (for private repos) |
 
-### Web App
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `GITHUB_TOKEN` | No | GitHub Personal Access Token (for PR creation) |
+## Troubleshooting
 
-Note: The web app doesn't need `LINGODOTDEV_API_KEY` since translations are done via CLI.
+### "LINGODOTDEV_API_KEY not found"
 
-## 🌍 Supported Languages
+Make sure you've set the environment variable:
 
-- 🇪🇸 Spanish (es)
-- 🇫🇷 French (fr)
-- 🇩🇪 German (de)
-- 🇵🇹 Portuguese (pt)
-- 🇯🇵 Japanese (ja)
-- 🇨🇳 Chinese Simplified (zh-CN)
-- 🇮🇳 Hindi (hi)
-- 🇸🇦 Arabic (ar)
-- 🇷🇺 Russian (ru)
-- 🇧🇩 Bengali (bn)
+```bash
+export LINGODOTDEV_API_KEY=your_key_here
+```
 
-## 🛠️ Development
+### "Invalid repository URL"
+
+Use one of these formats:
+
+- `owner/repo`
+- `https://github.com/owner/repo`
+
+### Translation timeout
+
+Large files may take longer. The CLI has a 2-minute timeout. For very large repositories, consider translating files individually.
+
+### No files found
+
+Make sure the repository has a README.md file. Use `--include-contributing` and `--include-docs` to include additional files.
+
+## Architecture
+
+- **Language**: TypeScript
+- **CLI Framework**: Commander.js
+- **Translation**: Lingo.dev CLI (runs locally)
+- **GitHub Integration**: GitHub REST API
+- **Output**: Files saved to disk
+- **Interactive Prompts**: @clack/prompts for user-friendly CLI experience
+
+## Project Structure
+
+```text
+readmelingo/
+├── cli/                  # CLI tool
+│   ├── index.ts         # CLI entry point
+│   └── commands/
+│       └── translate.ts # Translation command
+├── lib/                 # Utilities
+│   ├── github.ts        # GitHub API helpers
+│   ├── lingo.ts         # Lingo CLI integration
+│   ├── markdown.ts      # Markdown utilities
+│   ├── utils.ts         # General utilities
+│   └── zip.ts           # ZIP generation
+├── bin/                 # Executable script
+│   └── readmelingo      # Global CLI entry point
+└── dist/                # Compiled JavaScript (for npm package)
+```
+
+## Development
 
 ### Running the CLI
 
@@ -165,27 +262,20 @@ npm run cli translate -- --repo owner/repo
 # Build and run
 npm run cli:build
 npm run cli:run translate -- --repo owner/repo
-```
 
-### Running the Web App
-
-```bash
-# Development
-npm run dev
-
-# Production
-npm run build
-npm start
+# Test global installation
+npm run cli:test
 ```
 
 ### Code Quality
 
 The project uses:
+
 - TypeScript for type safety
 - ESLint for code linting
 - Prettier for code formatting
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
@@ -195,26 +285,16 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## 📝 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
-- [Lingo.dev](https://lingo.dev) for the amazing translation API
-- [shadcn/ui](https://ui.shadcn.com) for the beautiful UI components
-- [Next.js](https://nextjs.org) for the awesome framework
+- [Lingo.dev](https://lingo.dev) for the translation API
+- [Commander.js](https://github.com/tj/commander.js) for CLI framework
+- [@clack/prompts](https://github.com/natemoo-re/clack) for interactive prompts
 
-## 📚 Documentation
-
-- **[CLI_README.md](./CLI_README.md)** - Complete CLI documentation
-- **[CLI_QUICKSTART.md](./CLI_QUICKSTART.md)** - Quick start guide for CLI
-- **[QUICKSTART.md](./QUICKSTART.md)** - Quick start for web app
-
-## 📧 Contact
+## Contact
 
 For questions or support, please open an issue on GitHub.
-
----
-
-Made with ❤️ by the ReadMeLingo team
