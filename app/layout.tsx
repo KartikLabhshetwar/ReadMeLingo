@@ -5,16 +5,18 @@ import "./globals.css";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "ReadMeLingo - Multilingual README & Docs Generator",
-  description: "Instantly translate your GitHub repository documentation into multiple languages using Lingo.dev",
+  title: "ReadMeLingo - CLI Tool for Translating GitHub Documentation",
+  description: "Translate GitHub repository documentation into multiple languages using Lingo.dev CLI",
 };
 
 export default function RootLayout({
@@ -23,7 +25,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="scroll-smooth">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

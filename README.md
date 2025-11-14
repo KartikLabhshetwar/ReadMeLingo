@@ -1,16 +1,26 @@
 # ReadMeLingo 🌍
 
-> Instantly translate your GitHub repository documentation into multiple languages using Lingo.dev
+> Translate GitHub repository documentation into multiple languages using Lingo.dev CLI + Web Preview
 
-ReadMeLingo is a web-based tool that automatically translates your GitHub repository's documentation (README.md, CONTRIBUTING.md, and /docs files) into multiple languages, making your open-source projects accessible to a global audience.
+ReadMeLingo consists of two parts:
+- **CLI Tool**: Run locally to translate repository documentation using Lingo.dev
+- **Web App**: Preview, download, and create PRs with translated files
+
+This architecture ensures fast, reliable translations that work everywhere (including serverless deployments).
 
 ## ✨ Features
 
-- 🚀 **Instant Translation**: Translate README and documentation files in seconds
+### CLI Tool
+- 🚀 **Fast Translation**: Run locally with no timeout limits
 - 🌐 **10+ Languages**: Support for Spanish, French, German, Portuguese, Japanese, Chinese, Hindi, Arabic, Russian, and Bengali
-- 👀 **Live Preview**: View rendered markdown translations before downloading
+- 📁 **Flexible Output**: Save translations to any directory
+- 🔧 **Works Everywhere**: Run on your machine, CI/CD, or anywhere Node.js runs
+
+### Web App
+- 👀 **Live Preview**: View rendered markdown translations
 - 📦 **Bulk Download**: Download all translations as a ZIP file
 - 🔄 **PR Creation**: Automatically create pull requests with translated files
+- 📤 **File Upload**: Upload CLI-generated translations for preview
 - 🎨 **Beautiful UI**: Modern, responsive interface built with Next.js and shadcn/ui
 
 ## 🚀 Getting Started
@@ -54,45 +64,61 @@ npm run dev
 
 ## 📖 How to Use
 
-1. **Enter Repository URL**: Paste your GitHub repository URL (e.g., `https://github.com/owner/repo`)
-2. **Select Files**: Choose which documentation files to translate (README.md, CONTRIBUTING.md, /docs)
-3. **Choose Languages**: Select target languages from 10+ supported options
-4. **Translate**: Click "Translate Files" and wait a few seconds
-5. **Preview & Download**: View translations, copy to clipboard, download individual files, or get all as ZIP
-6. **Create PR** (Optional): Automatically create a pull request with all translated files
+### Option 1: CLI + Web App (Recommended)
+
+1. **Run CLI to translate**:
+   ```bash
+   export LINGODOTDEV_API_KEY=your_key_here
+   npm run cli translate -- --repo owner/repo --languages es,fr,de
+   ```
+
+2. **Upload to web app**:
+   - Start web app: `npm run dev`
+   - Click "Upload Translated Files"
+   - Select all `.md` files from `./translations/`
+
+3. **Preview & Create PR**: Use the web app to preview, download, or create a PR
+
+### Option 2: Web App Only (Limited)
+
+The web app can also fetch and translate directly, but this is slower and may timeout on large files. CLI is recommended for best performance.
 
 ## 🏗️ Architecture
 
-ReadMeLingo is built with:
-
-- **Frontend**: Next.js 16 (App Router), TypeScript, TailwindCSS, shadcn/ui
-- **Backend**: Next.js API Routes
-- **Translation**: Lingo.dev CLI (executed server-side)
+### CLI Tool
+- **Language**: TypeScript
+- **CLI Framework**: Commander.js
+- **Translation**: Lingo.dev CLI (runs locally)
 - **GitHub Integration**: GitHub REST API
+- **Output**: Files saved to disk
+
+### Web App
+- **Frontend**: Next.js 16 (App Router), TypeScript, TailwindCSS, shadcn/ui
+- **Backend**: Next.js API Routes (for file upload, PR creation, ZIP generation)
+- **Translation**: Accepts pre-translated files from CLI
+- **GitHub Integration**: GitHub REST API (for PR creation)
 - **Markdown Rendering**: react-markdown with remark-gfm
 
 ## 📁 Project Structure
 
 ```
 readmelingo/
-├── app/
-│   ├── api/              # API routes
-│   │   ├── fetch-readme/
-│   │   ├── translate/
+├── cli/                  # CLI tool
+│   ├── index.ts         # CLI entry point
+│   └── commands/
+│       └── translate.ts # Translation command
+├── app/                  # Web app
+│   ├── api/             # API routes
+│   │   ├── upload-translations/
 │   │   ├── create-pr/
 │   │   └── download-zip/
-│   ├── translate/        # Translation workflow page
 │   ├── preview/          # Preview results page
 │   └── page.tsx          # Landing page
 ├── components/           # React components
 │   ├── ui/              # shadcn/ui components
-│   ├── repo-input.tsx
-│   ├── file-selector.tsx
-│   ├── language-selector.tsx
 │   ├── markdown-viewer.tsx
-│   ├── translation-preview.tsx
-│   └── create-pr-dialog.tsx
-├── lib/                 # Utility functions
+│   └── translation-preview.tsx
+├── lib/                 # Shared utilities
 │   ├── github.ts        # GitHub API helpers
 │   ├── lingo.ts         # Lingo CLI integration
 │   ├── markdown.ts      # Markdown utilities
@@ -102,10 +128,18 @@ readmelingo/
 
 ## 🔑 Environment Variables
 
+### CLI Tool
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `LINGODOTDEV_API_KEY` | Yes | Your Lingo.dev API key for translations |
-| `GITHUB_TOKEN` | No | GitHub Personal Access Token (needed for private repos and PR creation) |
+| `GITHUB_TOKEN` | No | GitHub Personal Access Token (for private repos) |
+
+### Web App
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `GITHUB_TOKEN` | No | GitHub Personal Access Token (for PR creation) |
+
+Note: The web app doesn't need `LINGODOTDEV_API_KEY` since translations are done via CLI.
 
 ## 🌍 Supported Languages
 
@@ -122,15 +156,24 @@ readmelingo/
 
 ## 🛠️ Development
 
-### Running Tests
+### Running the CLI
 
 ```bash
-npm test
+# Development (with tsx)
+npm run cli translate -- --repo owner/repo
+
+# Build and run
+npm run cli:build
+npm run cli:run translate -- --repo owner/repo
 ```
 
-### Building for Production
+### Running the Web App
 
 ```bash
+# Development
+npm run dev
+
+# Production
 npm run build
 npm start
 ```
@@ -161,6 +204,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Lingo.dev](https://lingo.dev) for the amazing translation API
 - [shadcn/ui](https://ui.shadcn.com) for the beautiful UI components
 - [Next.js](https://nextjs.org) for the awesome framework
+
+## 📚 Documentation
+
+- **[CLI_README.md](./CLI_README.md)** - Complete CLI documentation
+- **[CLI_QUICKSTART.md](./CLI_QUICKSTART.md)** - Quick start guide for CLI
+- **[QUICKSTART.md](./QUICKSTART.md)** - Quick start for web app
 
 ## 📧 Contact
 

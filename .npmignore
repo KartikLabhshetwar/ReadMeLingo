@@ -1,0 +1,40 @@
+# Development files
+app/
+components/
+.next/
+node_modules/
+.git/
+.DS_Store
+
+# Documentation (keep only essential)
+ARCHITECTURE.md
+IMPLEMENTATION_SUMMARY.md
+PROJECT_REQUIREMENTS.md
+QUICKSTART.md
+
+# Config files
+.next/
+postcss.config.mjs
+next.config.ts
+components.json
+tsconfig.json
+
+# Public assets (not needed for CLI)
+public/
+
+# Build artifacts
+dist/
+*.tsbuildinfo
+
+# Environment
+.env*
+.vercel
+
+# IDE
+.vscode/
+.idea/
+
+# Testing
+coverage/
+*.log
+
