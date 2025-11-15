@@ -25,6 +25,8 @@ cli/
 lib/
 bin/
 
+dist/
+
 # Build artifacts (dist is needed - contains compiled code)
 *.tsbuildinfo
 dist/*.tsbuildinfo

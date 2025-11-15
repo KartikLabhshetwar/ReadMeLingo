@@ -24,6 +24,8 @@
 .DS_Store
 *.pem
 
+dist/
+
 # debug
 npm-debug.log*
 yarn-debug.log*
