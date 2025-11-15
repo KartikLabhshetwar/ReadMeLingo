@@ -4,7 +4,9 @@ import { config } from 'dotenv';
 import { resolve, join } from 'path';
 import { existsSync } from 'fs';
 import { Command } from 'commander';
-import { intro, outro, cancel, isCancel, text, confirm, multiselect, select, log } from '@clack/prompts';
+import inquirer from 'inquirer';
+import chalk from 'chalk';
+import ora from 'ora';
 import { translateRepo } from './commands/translate';
 import * as packageJson from '../package.json';
 
@@ -39,20 +41,115 @@ program
   .description('CLI tool to translate GitHub repository documentation using Lingo.dev')
   .version(version);
 
+const LANGUAGE_OPTIONS = [
+  { name: '🇪🇸 Spanish (es) - Español', value: 'es' },
+  { name: '🇫🇷 French (fr) - Français', value: 'fr' },
+  { name: '🇩🇪 German (de) - Deutsch', value: 'de' },
+  { name: '🇮🇹 Italian (it) - Italiano', value: 'it' },
+  { name: '🇵🇹 Portuguese (pt) - Português', value: 'pt' },
+  { name: '🇯🇵 Japanese (ja) - 日本語', value: 'ja' },
+  { name: '🇰🇷 Korean (ko) - 한국어', value: 'ko' },
+  { name: '🇨🇳 Chinese (zh) - 中文', value: 'zh' },
+  { name: '🇷🇺 Russian (ru) - Русский', value: 'ru' },
+  { name: '🇸🇦 Arabic (ar) - العربية', value: 'ar' },
+  { name: '🇮🇳 Hindi (hi) - हिन्दी', value: 'hi' },
+  { name: '🇳🇱 Dutch (nl) - Nederlands', value: 'nl' },
+  { name: '🇵🇱 Polish (pl) - Polski', value: 'pl' },
+  { name: '🇹🇷 Turkish (tr) - Türkçe', value: 'tr' },
+  { name: '🇸🇪 Swedish (sv) - Svenska', value: 'sv' },
+  { name: '🇳🇴 Norwegian (no) - Norsk', value: 'no' },
+  { name: '🇩🇰 Danish (da) - Dansk', value: 'da' },
+  { name: '🇫🇮 Finnish (fi) - Suomi', value: 'fi' },
+  { name: '🇬🇷 Greek (el) - Ελληνικά', value: 'el' },
+  { name: '🇨🇿 Czech (cs) - Čeština', value: 'cs' },
+  { name: '🇷🇴 Romanian (ro) - Română', value: 'ro' },
+  { name: '🇭🇺 Hungarian (hu) - Magyar', value: 'hu' },
+  { name: '🇻🇳 Vietnamese (vi) - Tiếng Việt', value: 'vi' },
+  { name: '🇹🇭 Thai (th) - ไทย', value: 'th' },
+  { name: '🇮🇩 Indonesian (id) - Bahasa Indonesia', value: 'id' },
+  { name: '🇮🇱 Hebrew (he) - עברית', value: 'he' },
+  { name: '🇺🇦 Ukrainian (uk) - Українська', value: 'uk' },
+  { name: '🇪🇸 Catalan (ca) - Català', value: 'ca' },
+  { name: '🇧🇬 Bulgarian (bg) - Български', value: 'bg' },
+  { name: '🇭🇷 Croatian (hr) - Hrvatski', value: 'hr' },
+  { name: '🇸🇰 Slovak (sk) - Slovenčina', value: 'sk' },
+  { name: '🇸🇮 Slovenian (sl) - Slovenščina', value: 'sl' },
+  { name: '🇱🇹 Lithuanian (lt) - Lietuvių', value: 'lt' },
+  { name: '🇱🇻 Latvian (lv) - Latviešu', value: 'lv' },
+  { name: '🇪🇪 Estonian (et) - Eesti', value: 'et' },
+  { name: '🇲🇾 Malay (ms) - Bahasa Melayu', value: 'ms' },
+  { name: '🇵🇭 Filipino (tl) - Filipino', value: 'tl' },
+];
+
+function validateRepoUrl(value: string): boolean | string {
+  if (!value || value.trim().length === 0) {
+    return 'Repository URL is required';
+  }
+  const patterns = [
+    /github\.com\/([^\/]+)\/([^\/]+)/,
+    /^([^\/]+)\/([^\/]+)$/,
+  ];
+  const isValid = patterns.some(pattern => pattern.test(value.trim()));
+  if (!isValid) {
+    return 'Invalid repository format. Use: owner/repo or https://github.com/owner/repo';
+  }
+  return true;
+}
+
+function validateOutputDir(value: string): boolean | string {
+  if (!value || value.trim().length === 0) {
+    return 'Output directory is required';
+  }
+  return true;
+}
+
+function validateGitHubToken(value: string): boolean | string {
+  if (!value || value.trim().length === 0) {
+    return 'GitHub token is required';
+  }
+  if (!value.startsWith('ghp_') && !value.startsWith('gho_') && !value.startsWith('ghu_') && !value.startsWith('ghs_') && !value.startsWith('ghr_')) {
+    return 'Invalid GitHub token format. Token should start with ghp_, gho_, ghu_, ghs_, or ghr_';
+  }
+  return true;
+}
+
+function printWelcome() {
+  console.log(chalk.bold.cyan('\n╔═══════════════════════════════════════════════════════════╗'));
+  console.log(chalk.bold.cyan('║') + chalk.bold.white('  🌍 ReadMeLingo - Translation CLI') + chalk.bold.cyan('                      ║'));
+  console.log(chalk.bold.cyan('║') + chalk.gray('  Translate GitHub documentation into 40+ languages') + chalk.bold.cyan('  ║'));
+  console.log(chalk.bold.cyan('╚═══════════════════════════════════════════════════════════╝\n'));
+}
+
+function printSuccess(message: string) {
+  console.log(chalk.green('✓'), chalk.bold(message));
+}
+
+function printError(message: string) {
+  console.log(chalk.red('✗'), chalk.bold(message));
+}
+
+function printInfo(message: string) {
+  console.log(chalk.blue('ℹ'), message);
+}
+
 async function interactiveMode() {
-  intro('🌍 ReadMeLingo - Translation CLI');
+  printWelcome();
 
   try {
-    const action = await select({
-      message: 'What would you like to do?',
-      options: [
-        { value: 'translate', label: '📝 Translate Repository Documentation', hint: 'Fetch and translate README files' },
-        { value: 'exit', label: '❌ Exit', hint: 'Close the application' },
-      ],
-    });
+    const { action } = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'action',
+        message: 'What would you like to do?',
+        choices: [
+          { name: '📝 Translate Repository Documentation', value: 'translate' },
+          { name: '❌ Exit', value: 'exit' },
+        ],
+      },
+    ]);
 
-    if (isCancel(action) || action === 'exit') {
-      cancel('Operation cancelled.');
+    if (action === 'exit') {
+      console.log(chalk.gray('\nGoodbye! 👋\n'));
       process.exit(0);
     }
 
@@ -60,171 +157,125 @@ async function interactiveMode() {
       await handleTranslate();
     }
   } catch (error) {
-    cancel(error instanceof Error ? error.message : String(error));
+    if (error && typeof error === 'object' && 'isTtyError' in error) {
+      printError('Prompt couldn\'t be rendered in the current environment');
+    } else {
+      printError(error instanceof Error ? error.message : String(error));
+    }
     process.exit(1);
   }
 }
 
 async function handleTranslate() {
-  const repoUrl = await text({
-    message: 'Enter GitHub repository URL or owner/repo',
-    placeholder: 'owner/repo or https://github.com/owner/repo',
-    validate(value) {
-      if (!value || value.trim().length === 0) {
-        return 'Repository URL is required';
+  try {
+    const { repoUrl } = await inquirer.prompt([
+      {
+        type: 'input',
+        name: 'repoUrl',
+        message: 'Enter GitHub repository URL or owner/repo',
+        default: '',
+        validate: validateRepoUrl,
+        transformer: (input: string) => {
+          return input.trim();
+        },
+      },
+    ]);
+
+    const { filesToInclude } = await inquirer.prompt([
+      {
+        type: 'checkbox',
+        name: 'filesToInclude',
+        message: 'Which files would you like to translate?',
+        choices: [
+          { name: '📄 README.md (Main documentation file)', value: 'readme', checked: true },
+          { name: '📋 CONTRIBUTING.md (Contribution guidelines)', value: 'contributing' },
+          { name: '📁 /docs folder (Documentation directory)', value: 'docs' },
+        ],
+        validate: (answer: string[]) => {
+          if (answer.length === 0) {
+            return 'Please select at least one file type to translate';
+          }
+          return true;
+        },
+      },
+    ]);
+
+    const { selectedLanguages } = await inquirer.prompt([
+      {
+        type: 'checkbox',
+        name: 'selectedLanguages',
+        message: 'Select target languages (use space to select, arrow keys to navigate)',
+        choices: LANGUAGE_OPTIONS,
+        pageSize: 15,
+        validate: (answer: string[]) => {
+          if (answer.length === 0) {
+            return 'Please select at least one language';
+          }
+          return true;
+        },
+      },
+    ]);
+
+    printInfo(`Selected ${selectedLanguages.length} language(s): ${selectedLanguages.join(', ')}\n`);
+
+    const { outputDir } = await inquirer.prompt([
+      {
+        type: 'input',
+        name: 'outputDir',
+        message: 'Output directory for translated files',
+        default: './translations',
+        validate: validateOutputDir,
+      },
+    ]);
+
+    let token: string | undefined = process.env.GITHUB_TOKEN;
+
+    if (!token) {
+      const { useToken } = await inquirer.prompt([
+        {
+          type: 'confirm',
+          name: 'useToken',
+          message: 'Do you have a GitHub token for private repositories?',
+          default: false,
+        },
+      ]);
+
+      if (useToken) {
+        const { tokenInput } = await inquirer.prompt([
+          {
+            type: 'password',
+            name: 'tokenInput',
+            message: 'Enter your GitHub personal access token',
+            mask: '*',
+            validate: validateGitHubToken,
+          },
+        ]);
+        token = tokenInput;
       }
-      const patterns = [
-        /github\.com\/([^\/]+)\/([^\/]+)/,
-        /^([^\/]+)\/([^\/]+)$/,
-      ];
-      const isValid = patterns.some(pattern => pattern.test(value));
-      if (!isValid) {
-        return 'Invalid repository format. Use: owner/repo or https://github.com/owner/repo';
-      }
-    },
-  });
+    } else {
+      printInfo('Using GitHub token from environment variable\n');
+    }
 
-  if (isCancel(repoUrl)) {
-    cancel('Operation cancelled.');
-    process.exit(0);
-  }
+    console.log(chalk.bold('\nStarting translation process...\n'));
 
-  const filesToInclude = await multiselect({
-    message: 'Which files would you like to translate?',
-    options: [
-      { value: 'readme', label: '📄 README.md', hint: 'Main documentation file' },
-      { value: 'contributing', label: '📋 CONTRIBUTING.md', hint: 'Contribution guidelines' },
-      { value: 'docs', label: '📁 /docs folder', hint: 'Documentation directory' },
-    ],
-    required: true,
-    initialValues: ['readme'],
-  });
-
-  if (isCancel(filesToInclude)) {
-    cancel('Operation cancelled.');
-    process.exit(0);
-  }
-
-  const languageOptions = [
-    { value: 'es', label: '🇪🇸 Spanish (es)', hint: 'Español' },
-    { value: 'fr', label: '🇫🇷 French (fr)', hint: 'Français' },
-    { value: 'de', label: '🇩🇪 German (de)', hint: 'Deutsch' },
-    { value: 'it', label: '🇮🇹 Italian (it)', hint: 'Italiano' },
-    { value: 'pt', label: '🇵🇹 Portuguese (pt)', hint: 'Português' },
-    { value: 'ja', label: '🇯🇵 Japanese (ja)', hint: '日本語' },
-    { value: 'ko', label: '🇰🇷 Korean (ko)', hint: '한국어' },
-    { value: 'zh', label: '🇨🇳 Chinese (zh)', hint: '中文' },
-    { value: 'ru', label: '🇷🇺 Russian (ru)', hint: 'Русский' },
-    { value: 'ar', label: '🇸🇦 Arabic (ar)', hint: 'العربية' },
-    { value: 'hi', label: '🇮🇳 Hindi (hi)', hint: 'हिन्दी' },
-    { value: 'nl', label: '🇳🇱 Dutch (nl)', hint: 'Nederlands' },
-    { value: 'pl', label: '🇵🇱 Polish (pl)', hint: 'Polski' },
-    { value: 'tr', label: '🇹🇷 Turkish (tr)', hint: 'Türkçe' },
-    { value: 'sv', label: '🇸🇪 Swedish (sv)', hint: 'Svenska' },
-    { value: 'no', label: '🇳🇴 Norwegian (no)', hint: 'Norsk' },
-    { value: 'da', label: '🇩🇰 Danish (da)', hint: 'Dansk' },
-    { value: 'fi', label: '🇫🇮 Finnish (fi)', hint: 'Suomi' },
-    { value: 'el', label: '🇬🇷 Greek (el)', hint: 'Ελληνικά' },
-    { value: 'cs', label: '🇨🇿 Czech (cs)', hint: 'Čeština' },
-    { value: 'ro', label: '🇷🇴 Romanian (ro)', hint: 'Română' },
-    { value: 'hu', label: '🇭🇺 Hungarian (hu)', hint: 'Magyar' },
-    { value: 'vi', label: '🇻🇳 Vietnamese (vi)', hint: 'Tiếng Việt' },
-    { value: 'th', label: '🇹🇭 Thai (th)', hint: 'ไทย' },
-    { value: 'id', label: '🇮🇩 Indonesian (id)', hint: 'Bahasa Indonesia' },
-    { value: 'he', label: '🇮🇱 Hebrew (he)', hint: 'עברית' },
-    { value: 'uk', label: '🇺🇦 Ukrainian (uk)', hint: 'Українська' },
-    { value: 'ca', label: '🇪🇸 Catalan (ca)', hint: 'Català' },
-    { value: 'bg', label: '🇧🇬 Bulgarian (bg)', hint: 'Български' },
-    { value: 'hr', label: '🇭🇷 Croatian (hr)', hint: 'Hrvatski' },
-    { value: 'sk', label: '🇸🇰 Slovak (sk)', hint: 'Slovenčina' },
-    { value: 'sl', label: '🇸🇮 Slovenian (sl)', hint: 'Slovenščina' },
-    { value: 'lt', label: '🇱🇹 Lithuanian (lt)', hint: 'Lietuvių' },
-    { value: 'lv', label: '🇱🇻 Latvian (lv)', hint: 'Latviešu' },
-    { value: 'et', label: '🇪🇪 Estonian (et)', hint: 'Eesti' },
-    { value: 'ms', label: '🇲🇾 Malay (ms)', hint: 'Bahasa Melayu' },
-    { value: 'tl', label: '🇵🇭 Filipino (tl)', hint: 'Filipino' },
-  ];
-
-  const selectedLanguages = await multiselect({
-    message: 'Select target languages',
-    options: languageOptions,
-    required: true,
-  });
-
-  if (isCancel(selectedLanguages)) {
-    cancel('Operation cancelled.');
-    process.exit(0);
-  }
-
-  if (!selectedLanguages || (Array.isArray(selectedLanguages) && selectedLanguages.length === 0)) {
-    cancel('No languages selected. Please select at least one language.');
-    process.exit(1);
-  }
-
-  const selectedLangs = Array.isArray(selectedLanguages) ? selectedLanguages : [selectedLanguages];
-  log.info(`Selected ${selectedLangs.length} language(s): ${selectedLangs.join(', ')}`);
-
-  const outputDir = await text({
-    message: 'Output directory for translated files',
-    placeholder: './translations',
-    initialValue: './translations',
-    validate(value) {
-      if (!value || value.trim().length === 0) {
-        return 'Output directory is required';
-      }
-    },
-  });
-
-  if (isCancel(outputDir)) {
-    cancel('Operation cancelled.');
-    process.exit(0);
-  }
-
-  let token: string | undefined = process.env.GITHUB_TOKEN;
-
-  if (!token) {
-    const useToken = await confirm({
-      message: 'Do you have a GitHub token for private repositories?',
-      initialValue: false,
+    await translateRepo({
+      repoUrl: repoUrl.trim(),
+      token,
+      languages: selectedLanguages,
+      outputDir: outputDir.trim(),
+      includeContributing: filesToInclude.includes('contributing'),
+      includeDocs: filesToInclude.includes('docs'),
     });
 
-    if (isCancel(useToken)) {
-      cancel('Operation cancelled.');
-      process.exit(0);
+    console.log(chalk.bold.green('\n✨ Translation completed successfully!\n'));
+  } catch (error) {
+    if (error && typeof error === 'object' && 'isTtyError' in error) {
+      printError('Prompt couldn\'t be rendered in the current environment');
+    } else {
+      printError(error instanceof Error ? error.message : String(error));
     }
-
-    if (useToken) {
-      const tokenInput = await text({
-        message: 'Enter your GitHub token',
-        placeholder: 'ghp_...',
-        validate(value) {
-          if (!value || value.trim().length === 0) {
-            return 'GitHub token is required';
-          }
-        },
-      });
-
-      if (isCancel(tokenInput)) {
-        cancel('Operation cancelled.');
-        process.exit(0);
-      }
-
-      token = tokenInput as string;
-    }
+    process.exit(1);
   }
-
-  log.info('\nStarting translation process...\n');
-  
-  await translateRepo({
-    repoUrl: repoUrl as string,
-    token,
-    languages: selectedLangs as string[],
-    outputDir: outputDir as string,
-    includeContributing: (filesToInclude as string[]).includes('contributing'),
-    includeDocs: (filesToInclude as string[]).includes('docs'),
-  });
-
-  outro('✨ Translation completed successfully!');
 }
 
 program
@@ -242,7 +293,7 @@ program
       return;
     }
 
-    intro('🌍 ReadMeLingo - Translation CLI');
+    printWelcome();
 
     try {
       let languages: string[] = [];
@@ -252,70 +303,32 @@ program
       }
 
       if (!options.languages || languages.length === 0) {
-        const languageOptions = [
-          { value: 'es', label: '🇪🇸 Spanish (es)' },
-          { value: 'fr', label: '🇫🇷 French (fr)' },
-          { value: 'de', label: '🇩🇪 German (de)' },
-          { value: 'it', label: '🇮🇹 Italian (it)' },
-          { value: 'pt', label: '🇵🇹 Portuguese (pt)' },
-          { value: 'ja', label: '🇯🇵 Japanese (ja)' },
-          { value: 'ko', label: '🇰🇷 Korean (ko)' },
-          { value: 'zh', label: '🇨🇳 Chinese (zh)' },
-          { value: 'ru', label: '🇷🇺 Russian (ru)' },
-          { value: 'ar', label: '🇸🇦 Arabic (ar)' },
-          { value: 'hi', label: '🇮🇳 Hindi (hi)' },
-          { value: 'nl', label: '🇳🇱 Dutch (nl)' },
-          { value: 'pl', label: '🇵🇱 Polish (pl)' },
-          { value: 'tr', label: '🇹🇷 Turkish (tr)' },
-          { value: 'sv', label: '🇸🇪 Swedish (sv)' },
-          { value: 'no', label: '🇳🇴 Norwegian (no)' },
-          { value: 'da', label: '🇩🇰 Danish (da)' },
-          { value: 'fi', label: '🇫🇮 Finnish (fi)' },
-          { value: 'el', label: '🇬🇷 Greek (el)' },
-          { value: 'cs', label: '🇨🇿 Czech (cs)' },
-          { value: 'ro', label: '🇷🇴 Romanian (ro)' },
-          { value: 'hu', label: '🇭🇺 Hungarian (hu)' },
-          { value: 'vi', label: '🇻🇳 Vietnamese (vi)' },
-          { value: 'th', label: '🇹🇭 Thai (th)' },
-          { value: 'id', label: '🇮🇩 Indonesian (id)' },
-          { value: 'he', label: '🇮🇱 Hebrew (he)' },
-          { value: 'uk', label: '🇺🇦 Ukrainian (uk)' },
-          { value: 'ca', label: '🇪🇸 Catalan (ca)' },
-          { value: 'bg', label: '🇧🇬 Bulgarian (bg)' },
-          { value: 'hr', label: '🇭🇷 Croatian (hr)' },
-          { value: 'sk', label: '🇸🇰 Slovak (sk)' },
-          { value: 'sl', label: '🇸🇮 Slovenian (sl)' },
-          { value: 'lt', label: '🇱🇹 Lithuanian (lt)' },
-          { value: 'lv', label: '🇱🇻 Latvian (lv)' },
-          { value: 'et', label: '🇪🇪 Estonian (et)' },
-          { value: 'ms', label: '🇲🇾 Malay (ms)' },
-          { value: 'tl', label: '🇵🇭 Filipino (tl)' },
-        ];
-
-        const selected = await multiselect({
-          message: 'Select target languages',
-          options: languageOptions,
-          required: true,
-        });
-
-        if (isCancel(selected)) {
-          cancel('Operation cancelled.');
-          process.exit(0);
-        }
-
-        if (!selected || (Array.isArray(selected) && selected.length === 0)) {
-          cancel('No languages selected. Please select at least one language.');
-          process.exit(1);
-        }
-
-        languages = Array.isArray(selected) ? selected : [selected];
-        log.info(`Selected ${languages.length} language(s): ${languages.join(', ')}`);
+        const { selectedLanguages } = await inquirer.prompt([
+          {
+            type: 'checkbox',
+            name: 'selectedLanguages',
+            message: 'Select target languages',
+            choices: LANGUAGE_OPTIONS,
+            pageSize: 15,
+            validate: (answer: string[]) => {
+              if (answer.length === 0) {
+                return 'Please select at least one language';
+              }
+              return true;
+            },
+          },
+        ]);
+        languages = selectedLanguages;
+        printInfo(`Selected ${languages.length} language(s): ${languages.join(', ')}\n`);
       }
 
       let token = options.token;
       if (!token && process.env.GITHUB_TOKEN) {
         token = process.env.GITHUB_TOKEN;
+        printInfo('Using GitHub token from environment variable\n');
       }
+
+      console.log(chalk.bold('\nStarting translation process...\n'));
 
       await translateRepo({
         repoUrl: options.repo,
@@ -326,9 +339,13 @@ program
         includeDocs: options.includeDocs,
       });
 
-      outro('✨ Translation completed successfully!');
+      console.log(chalk.bold.green('\n✨ Translation completed successfully!\n'));
     } catch (error) {
-      cancel(error instanceof Error ? error.message : String(error));
+      if (error && typeof error === 'object' && 'isTtyError' in error) {
+        printError('Prompt couldn\'t be rendered in the current environment');
+      } else {
+        printError(error instanceof Error ? error.message : String(error));
+      }
       process.exit(1);
     }
   });

@@ -1,20 +1,23 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.translateRepo = translateRepo;
-const prompts_1 = require("@clack/prompts");
+const ora_1 = __importDefault(require("ora"));
+const chalk_1 = __importDefault(require("chalk"));
 const github_1 = require("../../lib/github");
 const markdown_1 = require("../../lib/markdown");
 const lingo_1 = require("../../lib/lingo");
 async function translateRepo(options) {
-    const s = (0, prompts_1.spinner)();
-    s.start('Parsing repository URL...');
+    const spinner = (0, ora_1.default)('Parsing repository URL...').start();
     const repoInfo = (0, github_1.parseRepoUrl)(options.repoUrl);
     if (!repoInfo) {
-        s.stop('Invalid repository URL');
+        spinner.fail('Invalid repository URL');
         throw new Error('Invalid repository URL. Use format: https://github.com/owner/repo or owner/repo');
     }
-    s.stop(`Repository: ${repoInfo.owner}/${repoInfo.repo}`);
-    s.start('Fetching repository files...');
+    spinner.succeed(`Repository: ${chalk_1.default.bold.cyan(repoInfo.owner + '/' + repoInfo.repo)}`);
+    spinner.start('Fetching repository files...');
     const files = [];
     try {
         const readme = await (0, github_1.fetchReadme)(repoInfo.owner, repoInfo.repo, options.token);
@@ -50,17 +53,17 @@ async function translateRepo(options) {
                 }));
             }
             catch (error) {
-                prompts_1.log.warn('Could not fetch /docs folder');
+                spinner.warn('Could not fetch /docs folder');
             }
         }
         if (files.length === 0) {
-            s.stop('No markdown files found');
+            spinner.fail('No markdown files found');
             throw new Error('No markdown files found in repository');
         }
-        s.stop(`Found ${files.length} file(s) to translate`);
+        spinner.succeed(`Found ${chalk_1.default.bold(files.length)} file(s) to translate`);
     }
     catch (error) {
-        s.stop('Failed to fetch repository files');
+        spinner.fail('Failed to fetch repository files');
         throw error;
     }
     const apiKey = process.env.LINGODOTDEV_API_KEY;
@@ -82,28 +85,16 @@ async function translateRepo(options) {
     let savedFiles = [];
     let translations = [];
     try {
-        await (0, prompts_1.tasks)([
-            {
-                title: `Translating ${files.length} file(s) to ${options.languages.length} language(s)`,
-                task: async () => {
-                    translations = await (0, lingo_1.translateFiles)(files, options.languages, apiKey);
-                    prompts_1.log.info(`Translated ${translations.length} file(s)`);
-                    return 'Translation completed';
-                },
-            },
-            {
-                title: `Saving translated files to ${options.outputDir}`,
-                task: async () => {
-                    savedFiles = await (0, lingo_1.saveTranslatedFiles)(translations, options.outputDir);
-                    prompts_1.log.success(`Files saved to ${options.outputDir}`);
-                    prompts_1.log.info('\nTranslated files:');
-                    savedFiles.forEach(cf => {
-                        prompts_1.log.step(`${cf.fileName} (${cf.locale})`);
-                    });
-                    return `Saved ${savedFiles.length} file(s) successfully`;
-                },
-            },
-        ]);
+        const translateSpinner = (0, ora_1.default)(`Translating ${files.length} file(s) to ${options.languages.length} language(s)...`).start();
+        translations = await (0, lingo_1.translateFiles)(files, options.languages, apiKey);
+        translateSpinner.succeed(`Translated ${chalk_1.default.bold(translations.length)} file(s)`);
+        const saveSpinner = (0, ora_1.default)(`Saving translated files to ${options.outputDir}...`).start();
+        savedFiles = await (0, lingo_1.saveTranslatedFiles)(translations, options.outputDir);
+        saveSpinner.succeed(`Saved ${chalk_1.default.bold(savedFiles.length)} file(s) successfully`);
+        console.log(chalk_1.default.bold('\n📁 Translated files:'));
+        savedFiles.forEach(cf => {
+            console.log(chalk_1.default.gray('  •'), chalk_1.default.cyan(cf.fileName), chalk_1.default.gray(`(${cf.locale})`));
+        });
     }
     catch (error) {
         throw error;

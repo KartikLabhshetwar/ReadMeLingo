@@ -1,4 +1,5 @@
-import { spinner, log, tasks } from '@clack/prompts';
+import ora from 'ora';
+import chalk from 'chalk';
 import { parseRepoUrl, fetchReadme, fetchFile, fetchDirectory } from '../../lib/github';
 import { parseAndValidateMarkdown } from '../../lib/markdown';
 import { translateFiles, saveTranslatedFiles } from '../../lib/lingo';
@@ -13,17 +14,16 @@ interface TranslateOptions {
 }
 
 export async function translateRepo(options: TranslateOptions): Promise<void> {
-  const s = spinner();
-
-  s.start('Parsing repository URL...');
+  const spinner = ora('Parsing repository URL...').start();
+  
   const repoInfo = parseRepoUrl(options.repoUrl);
   if (!repoInfo) {
-    s.stop('Invalid repository URL');
+    spinner.fail('Invalid repository URL');
     throw new Error('Invalid repository URL. Use format: https://github.com/owner/repo or owner/repo');
   }
-  s.stop(`Repository: ${repoInfo.owner}/${repoInfo.repo}`);
+  spinner.succeed(`Repository: ${chalk.bold.cyan(repoInfo.owner + '/' + repoInfo.repo)}`);
 
-  s.start('Fetching repository files...');
+  spinner.start('Fetching repository files...');
   const files: Array<{ name: string; path: string; content: string }> = [];
 
   try {
@@ -61,18 +61,18 @@ export async function translateRepo(options: TranslateOptions): Promise<void> {
           };
         }));
       } catch (error) {
-        log.warn('Could not fetch /docs folder');
+        spinner.warn('Could not fetch /docs folder');
       }
     }
 
     if (files.length === 0) {
-      s.stop('No markdown files found');
+      spinner.fail('No markdown files found');
       throw new Error('No markdown files found in repository');
     }
 
-    s.stop(`Found ${files.length} file(s) to translate`);
+    spinner.succeed(`Found ${chalk.bold(files.length)} file(s) to translate`);
   } catch (error) {
-    s.stop('Failed to fetch repository files');
+    spinner.fail('Failed to fetch repository files');
     throw error;
   }
 
@@ -100,30 +100,18 @@ export async function translateRepo(options: TranslateOptions): Promise<void> {
   let translations: Array<{ fileName: string; locale: string; content: string }> = [];
 
   try {
-    await tasks([
-      {
-        title: `Translating ${files.length} file(s) to ${options.languages.length} language(s)`,
-        task: async () => {
-          translations = await translateFiles(files, options.languages, apiKey);
-          log.info(`Translated ${translations.length} file(s)`);
-          return 'Translation completed';
-        },
-      },
-      {
-        title: `Saving translated files to ${options.outputDir}`,
-        task: async () => {
-          savedFiles = await saveTranslatedFiles(translations, options.outputDir);
-          
-          log.success(`Files saved to ${options.outputDir}`);
-          log.info('\nTranslated files:');
-          savedFiles.forEach(cf => {
-            log.step(`${cf.fileName} (${cf.locale})`);
-          });
+    const translateSpinner = ora(`Translating ${files.length} file(s) to ${options.languages.length} language(s)...`).start();
+    translations = await translateFiles(files, options.languages, apiKey);
+    translateSpinner.succeed(`Translated ${chalk.bold(translations.length)} file(s)`);
 
-          return `Saved ${savedFiles.length} file(s) successfully`;
-        },
-      },
-    ]);
+    const saveSpinner = ora(`Saving translated files to ${options.outputDir}...`).start();
+    savedFiles = await saveTranslatedFiles(translations, options.outputDir);
+    saveSpinner.succeed(`Saved ${chalk.bold(savedFiles.length)} file(s) successfully`);
+
+    console.log(chalk.bold('\n📁 Translated files:'));
+    savedFiles.forEach(cf => {
+      console.log(chalk.gray('  •'), chalk.cyan(cf.fileName), chalk.gray(`(${cf.locale})`));
+    });
   } catch (error) {
     throw error;
   }
