@@ -1,5 +1,9 @@
 # ReadMeLingo
 
+[![npm version](https://img.shields.io/npm/v/readmelingo.svg)](https://www.npmjs.com/package/readmelingo)
+[![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](https://opensource.org/licenses/GPL-3.0)
+[![GitHub](https://img.shields.io/github/stars/KartikLabhshetwar/ReadMeLingo?style=social)](https://github.com/KartikLabhshetwar/ReadMeLingo)
+
 Translate GitHub repository documentation into multiple languages using Lingo.dev SDK
 
 ReadMeLingo is a CLI tool that translates repository documentation files using the Lingo.dev SDK. It uses efficient batch translation to translate multiple languages simultaneously, ensuring fast, reliable translations that work everywhere.
@@ -33,8 +37,8 @@ npm install -g readmelingo
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/readmelingo.git
-cd readmelingo
+git clone https://github.com/KartikLabhshetwar/ReadMeLingo.git
+cd ReadMeLingo
 ```
 
 1. Install dependencies:
@@ -520,8 +524,8 @@ readmelingo/
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/readmelingo.git
-cd readmelingo
+git clone https://github.com/KartikLabhshetwar/ReadMeLingo.git
+cd ReadMeLingo
 
 # Install dependencies
 npm install
@@ -574,7 +578,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GPL-3.0 License - see the [LICENSE](LICENSE) file for details.
 
 ## API Reference
 

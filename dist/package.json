@@ -1,7 +1,7 @@
 {
     "name": "readmelingo",
     "version": "0.1.0",
-    "description": "CLI tool to translate GitHub repository documentation into multiple languages using Lingo.dev",
+    "description": "Translate GitHub repository documentation into 40+ languages using Lingo.dev. Fast batch translation CLI tool for README, CONTRIBUTING, and docs.",
     "keywords": [
         "cli",
         "translation",
@@ -13,16 +13,16 @@
         "lingo",
         "markdown"
     ],
-    "author": "",
-    "license": "MIT",
+    "author": "KartikLabhshetwar",
+    "license": "GPL-3.0",
     "repository": {
         "type": "git",
-        "url": "https://github.com/yourusername/readmelingo.git"
+        "url": "https://github.com/KartikLabhshetwar/ReadMeLingo.git"
     },
     "bugs": {
-        "url": "https://github.com/yourusername/readmelingo/issues"
+        "url": "https://github.com/KartikLabhshetwar/ReadMeLingo/issues"
     },
-    "homepage": "https://github.com/yourusername/readmelingo#readme",
+    "homepage": "https://github.com/KartikLabhshetwar/ReadMeLingo#readme",
     "main": "dist/cli/index.js",
     "bin": {
         "readmelingo": "./dist/cli/index.js"
