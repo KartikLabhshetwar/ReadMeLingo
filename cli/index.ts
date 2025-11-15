@@ -6,9 +6,8 @@ import { existsSync } from 'fs';
 import { Command } from 'commander';
 import inquirer from 'inquirer';
 import chalk from 'chalk';
-import ora from 'ora';
 import { translateRepo } from './commands/translate';
-import * as packageJson from '../package.json';
+import { readFileSync } from 'fs';
 
 const findEnvFile = (): string | undefined => {
   const possiblePaths = [
@@ -25,6 +24,22 @@ const findEnvFile = (): string | undefined => {
   return undefined;
 };
 
+const getVersion = (): string => {
+  const possiblePaths = [
+    resolve(__dirname, '../../package.json'),
+    resolve(__dirname, '../package.json'),
+    join(process.cwd(), 'package.json'),
+  ];
+
+  for (const pkgPath of possiblePaths) {
+    if (existsSync(pkgPath)) {
+      const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
+      return pkg.version || '0.1.0';
+    }
+  }
+  return '0.1.0';
+};
+
 const envPath = findEnvFile();
 if (envPath) {
   config({ path: envPath });
@@ -32,7 +47,7 @@ if (envPath) {
   config();
 }
 
-const version = packageJson.version;
+const version = getVersion();
 
 const program = new Command();
 

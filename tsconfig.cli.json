@@ -8,7 +8,9 @@
     "target": "ES2020",
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "noEmit": false
+    "noEmit": false,
+    "incremental": true,
+    "tsBuildInfoFile": "./dist/tsconfig.cli.tsbuildinfo"
   },
   "include": ["cli/**/*", "lib/**/*"],
   "exclude": ["node_modules", "app", "components", ".next", "lib/utils.ts"]

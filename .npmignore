@@ -18,10 +18,17 @@ tsconfig.json
 
 # Public assets (not needed for CLI)
 public/
+web/
 
-# Build artifacts
-dist/
+# Source files (only dist is needed - contains compiled JS)
+cli/
+lib/
+bin/
+
+# Build artifacts (dist is needed - contains compiled code)
 *.tsbuildinfo
+dist/*.tsbuildinfo
+dist/package.json
 
 # Environment
 .env*
