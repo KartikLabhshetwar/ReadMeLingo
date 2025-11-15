@@ -6,10 +6,10 @@ export function Header() {
       <div className="max-w-[1060px] mx-auto px-4">
         <nav className="flex items-center justify-between py-4">
           <div className="flex items-center space-x-8">
-            <div className="text-[#37322f] font-semibold text-lg">ReadMeLingo</div>
+            <a href="/" className="text-[#37322f] font-semibold text-lg">ReadMeLingo</a>
             <div className="hidden md:flex items-center space-x-6">
-              <a href="#features" className="text-[#37322f] hover:text-[#37322f]/80 text-sm font-medium">Features</a>
-              <a href="#docs" className="text-[#37322f] hover:text-[#37322f]/80 text-sm font-medium">Documentation</a>
+              <a href="/#features" className="text-[#37322f] hover:text-[#37322f]/80 text-sm font-medium">Features</a>
+              <a href="/docs" className="text-[#37322f] hover:text-[#37322f]/80 text-sm font-medium">Documentation</a>
               <a href="https://github.com/KartikLabhshetwar/ReadMeLingo" target="_blank" rel="noopener noreferrer" className="text-[#37322f] hover:text-[#37322f]/80 text-sm font-medium">GitHub</a>
             </div>
           </div>
