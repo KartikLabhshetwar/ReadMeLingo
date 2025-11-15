@@ -13,7 +13,7 @@ export function Header() {
               <a href="https://github.com/KartikLabhshetwar/ReadMeLingo" target="_blank" rel="noopener noreferrer" className="text-[#37322f] hover:text-[#37322f]/80 text-sm font-medium">GitHub</a>
             </div>
           </div>
-          <a href="https://www.npmjs.com/package/readmelingo" target="_blank" rel="noopener noreferrer">
+          <a href="https://www.npmjs.com/package/readmelingoo" target="_blank" rel="noopener noreferrer">
             <Button variant="ghost" className="text-[#37322f] hover:bg-[#37322f]/5">
               Install
             </Button>

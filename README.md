@@ -1,6 +1,6 @@
 # ReadMeLingo
 
-[![npm version](https://img.shields.io/npm/v/readmelingo.svg)](https://www.npmjs.com/package/readmelingo)
+[![npm version](https://img.shields.io/npm/v/readmelingoo.svg)](https://www.npmjs.com/package/readmelingoo)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](https://opensource.org/licenses/GPL-3.0)
 [![GitHub](https://img.shields.io/github/stars/KartikLabhshetwar/ReadMeLingo?style=social)](https://github.com/KartikLabhshetwar/ReadMeLingo)
 
@@ -19,7 +19,7 @@ Translate GitHub repository documentation into 40+ languages using Lingo.dev. Fa
 ## Installation
 
 ```bash
-npm install -g readmelingo
+npm install -g readmelingoo
 ```
 
 ## Quick Start
@@ -48,10 +48,10 @@ source ~/.zshrc
 
 ```bash
 # Interactive mode (recommended for first use)
-readmelingo
+readmelingoo
 
 # Or with options
-readmelingo translate --repo owner/repo --languages es,fr,de
+readmelingoo translate --repo owner/repo --languages es,fr,de
 ```
 
 ## Usage
@@ -60,21 +60,21 @@ readmelingo translate --repo owner/repo --languages es,fr,de
 
 ```bash
 # Interactive mode - prompts for all options
-readmelingo
+readmelingoo
 # or
-readmelingo translate
+readmelingoo translate
 
 # Command-line mode - specify all options as flags
-readmelingo translate --repo owner/repo --languages es,fr,de
+readmelingoo translate --repo owner/repo --languages es,fr,de
 
 # Include CONTRIBUTING.md and /docs folder
-readmelingo translate --repo owner/repo --languages es,fr,de --include-contributing --include-docs
+readmelingoo translate --repo owner/repo --languages es,fr,de --include-contributing --include-docs
 
 # Custom output directory
-readmelingo translate --repo owner/repo --languages es,fr,de --output ./my-translations
+readmelingoo translate --repo owner/repo --languages es,fr,de --output ./my-translations
 
 # Private repository (use token flag or GITHUB_TOKEN env var)
-readmelingo translate --repo owner/repo --languages es,fr,de --token ghp_your_token
+readmelingoo translate --repo owner/repo --languages es,fr,de --token ghp_your_token
 ```
 
 ### Command Options
@@ -94,10 +94,10 @@ readmelingo translate --repo owner/repo --languages es,fr,de --token ghp_your_to
 
 ```bash
 # Translate Next.js README to 4 languages
-readmelingo translate --repo vercel/next.js --languages es,fr,de,pt
+readmelingoo translate --repo vercel/next.js --languages es,fr,de,pt
 
 # Translate all files to multiple languages
-readmelingo translate \
+readmelingoo translate \
   --repo owner/repo \
   --include-contributing \
   --include-docs \
@@ -105,7 +105,7 @@ readmelingo translate \
   --output ./output
 
 # Private repository
-readmelingo translate \
+readmelingoo translate \
   --repo private-org/private-repo \
   --token ghp_your_token \
   --languages es,fr
@@ -258,7 +258,7 @@ npm run cli:run translate -- --repo owner/repo
 
 # Link package globally for local testing
 npm link
-readmelingo translate --repo owner/repo
+readmelingoo translate --repo owner/repo
 ```
 
 ### Project Structure

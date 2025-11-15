@@ -36,7 +36,7 @@ const faqData: FAQItem[] = [
   {
     question: "How do I get started with ReadMeLingo?",
     answer:
-      "Getting started is simple! Install from npm with 'npm install -g readmelingo', set your LINGODOTDEV_API_KEY environment variable, and run 'readmelingo translate --repo owner/repo'. The tool also has an interactive mode that guides you through the setup.",
+      "Getting started is simple! Install from npm with 'npm install -g readmelingoo', set your LINGODOTDEV_API_KEY environment variable, and run 'readmelingoo translate --repo owner/repo'. The tool also has an interactive mode that guides you through the setup.",
   },
 ]
 

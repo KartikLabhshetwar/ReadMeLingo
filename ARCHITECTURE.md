@@ -2,7 +2,7 @@
 
 ## Overview
 
-ReadMeLingo uses a **SDK-based CLI architecture** where translations are done programmatically using the Lingo.dev SDK. The CLI tool is the primary interface for translation, while the web app (`readmelingo-landing`) serves as a marketing landing page.
+ReadMeLingo uses a **SDK-based CLI architecture** where translations are done programmatically using the Lingo.dev SDK. The CLI tool is the primary interface for translation, while the web app (`readmelingoo-landing`) serves as a marketing landing page.
 
 ## Why This Architecture?
 
@@ -33,7 +33,7 @@ ReadMeLingo uses a **SDK-based CLI architecture** where translations are done pr
                           ▼
         ┌─────────────────────────────────────┐
         │  Run CLI Tool                        │
-        │  readmelingo translate               │
+        │  readmelingoo translate               │
         │  or npm run cli translate            │
         └──────────────┬──────────────────────┘
                        │
@@ -86,7 +86,7 @@ ReadMeLingo uses a **SDK-based CLI architecture** where translations are done pr
 
 **Entry Point**: `cli/index.ts` (compiled to `dist/cli/index.js`)
 
-### Web App (`readmelingo-landing/`)
+### Web App (`readmelingoo-landing/`)
 
 **Purpose**: Marketing landing page
 
@@ -161,14 +161,14 @@ CLI Tool (cli/index.ts)
    - Output directory selection
 
 2. **Command-Line Mode**:
-   - `readmelingo translate -r owner/repo -l es,fr,de`
+   - `readmelingoo translate -r owner/repo -l es,fr,de`
    - Flags: `--repo`, `--languages`, `--token`, `--output`, `--include-contributing`, `--include-docs`
    - Falls back to interactive prompts for missing required options
 
 ## File Structure
 
 ```text
-readmelingo/
+readmelingoo/
 ├── cli/                          # CLI tool
 │   ├── index.ts                  # Entry point (interactive & command modes)
 │   ├── commands/
@@ -183,7 +183,7 @@ readmelingo/
 │   ├── zip.ts                    # ZIP generation utilities
 │   └── utils.ts                  # General utility functions
 │
-├── readmelingo-landing/          # Web app (landing page)
+├── readmelingoo-landing/          # Web app (landing page)
 │   ├── app/
 │   │   ├── page.tsx              # Landing page
 │   │   ├── layout.tsx            # Root layout
@@ -202,7 +202,7 @@ readmelingo/
 │   └── cli/                      # Compiled CLI code
 │
 ├── bin/                           # Binary symlink
-│   └── readmelingo               # CLI executable
+│   └── readmelingoo               # CLI executable
 │
 ├── package.json                   # Main package configuration
 ├── tsconfig.json                  # TypeScript config
@@ -230,11 +230,11 @@ readmelingo/
 
 ### CLI Tool Deployment
 
-- **Installation**: Available as npm package (`npm install -g readmelingo`)
+- **Installation**: Available as npm package (`npm install -g readmelingoo`)
 - **Usage**: Runs locally
 - **No deployment needed**: Just install and run
 - **Build**: TypeScript compiled to `dist/` directory
-- **Binary**: Executable at `bin/readmelingo` (symlinked to `dist/cli/index.js`)
+- **Binary**: Executable at `bin/readmelingoo` (symlinked to `dist/cli/index.js`)
 - **Requirements**: Node.js 18+
 
 ### Web App Deployment

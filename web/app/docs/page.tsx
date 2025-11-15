@@ -117,7 +117,7 @@ export default function DocsPage() {
         <div className="space-y-4">
           <div>
             <h3 className="text-lg font-semibold text-[#49423D] mb-2">Option 1: Install from npm (Recommended)</h3>
-            <CodeBlock>npm install -g readmelingo</CodeBlock>
+            <CodeBlock>npm install -g readmelingoo</CodeBlock>
           </div>
 
           <div>
@@ -192,7 +192,7 @@ source ~/.zshrc`}</CodeBlock>
             <p className="text-[#605A57] mb-4">
               Run ReadMeLingo without any arguments to enter interactive mode. The CLI will guide you through the translation process with prompts.
             </p>
-            <CodeBlock>readmelingo</CodeBlock>
+            <CodeBlock>readmelingoo</CodeBlock>
             <p className="text-sm text-[#605A57] mt-2">
               This will start an interactive session where you can:
             </p>
@@ -213,7 +213,7 @@ source ~/.zshrc`}</CodeBlock>
             
             <div className="mb-4">
               <h4 className="font-medium text-[#49423D] mb-2">Basic Syntax</h4>
-              <CodeBlock>readmelingo translate [options]</CodeBlock>
+              <CodeBlock>readmelingoo translate [options]</CodeBlock>
             </div>
 
             <div className="mb-4">
@@ -269,17 +269,17 @@ source ~/.zshrc`}</CodeBlock>
           <div>
             <h3 className="text-xl font-semibold text-[#49423D] mb-3">Version Command</h3>
             <p className="text-[#605A57] mb-4">Check the installed version of ReadMeLingo.</p>
-            <CodeBlock>readmelingo --version</CodeBlock>
+            <CodeBlock>readmelingoo --version</CodeBlock>
             <p className="text-sm text-[#605A57] mt-2">or</p>
-            <CodeBlock>readmelingo -V</CodeBlock>
+            <CodeBlock>readmelingoo -V</CodeBlock>
           </div>
 
           <div>
             <h3 className="text-xl font-semibold text-[#49423D] mb-3">Help Command</h3>
             <p className="text-[#605A57] mb-4">Display help information for commands.</p>
-            <CodeBlock>readmelingo --help</CodeBlock>
+            <CodeBlock>readmelingoo --help</CodeBlock>
             <p className="text-sm text-[#605A57] mt-2">or</p>
-            <CodeBlock>readmelingo -h</CodeBlock>
+            <CodeBlock>readmelingoo -h</CodeBlock>
           </div>
         </div>
       </Section>
@@ -289,7 +289,7 @@ source ~/.zshrc`}</CodeBlock>
           <div>
             <h3 className="text-lg font-semibold text-[#49423D] mb-3">Example 1: Basic Translation (Interactive Mode)</h3>
             <CodeBlock>{`# Start interactive mode
-readmelingo
+readmelingoo
 
 # The CLI will prompt you for:
 # - Repository URL
@@ -301,7 +301,7 @@ readmelingo
 
           <div>
             <h3 className="text-lg font-semibold text-[#49423D] mb-3">Example 2: Translate README to Multiple Languages</h3>
-            <CodeBlock>{`readmelingo translate \\
+            <CodeBlock>{`readmelingoo translate \\
   --repo facebook/react \\
   --languages es,fr,de,ja,ko \\
   --output ./translations`}</CodeBlock>
@@ -309,7 +309,7 @@ readmelingo
 
           <div>
             <h3 className="text-lg font-semibold text-[#49423D] mb-3">Example 3: Include CONTRIBUTING.md</h3>
-            <CodeBlock>{`readmelingo translate \\
+            <CodeBlock>{`readmelingoo translate \\
   --repo owner/repo \\
   --languages es,fr \\
   --include-contributing \\
@@ -318,7 +318,7 @@ readmelingo
 
           <div>
             <h3 className="text-lg font-semibold text-[#49423D] mb-3">Example 4: Translate Entire /docs Folder</h3>
-            <CodeBlock>{`readmelingo translate \\
+            <CodeBlock>{`readmelingoo translate \\
   --repo owner/repo \\
   --languages es,fr,de,it,pt \\
   --include-docs \\
@@ -327,7 +327,7 @@ readmelingo
 
           <div>
             <h3 className="text-lg font-semibold text-[#49423D] mb-3">Example 5: Private Repository with Token</h3>
-            <CodeBlock>{`readmelingo translate \\
+            <CodeBlock>{`readmelingoo translate \\
   --repo owner/private-repo \\
   --token ghp_your_token_here \\
   --languages es,fr \\
@@ -341,14 +341,14 @@ export LINGODOTDEV_API_KEY=your_api_key
 export GITHUB_TOKEN=ghp_your_token
 
 # Run translation
-readmelingo translate \\
+readmelingoo translate \\
   --repo owner/repo \\
   --languages es,fr,de`}</CodeBlock>
           </div>
 
           <div>
             <h3 className="text-lg font-semibold text-[#49423D] mb-3">Example 7: Full URL Format</h3>
-            <CodeBlock>{`readmelingo translate \\
+            <CodeBlock>{`readmelingoo translate \\
   --repo https://github.com/owner/repo \\
   --languages es,fr,de,ja \\
   --include-contributing \\
