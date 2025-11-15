@@ -3,7 +3,7 @@ import chalk from 'chalk';
 import { parseRepoUrl, fetchReadme, fetchFile, fetchDirectory } from '../../lib/github';
 import { parseAndValidateMarkdown } from '../../lib/markdown';
 import { translateFiles, saveTranslatedFiles } from '../../lib/lingo';
-import { getRandomQuote, formatQuote } from '../utils/quotes';
+import { getRandomQuote } from '../utils/quotes';
 
 interface TranslateOptions {
   repoUrl: string;
@@ -118,10 +118,6 @@ export async function translateRepo(options: TranslateOptions): Promise<void> {
   let translations: Array<{ fileName: string; locale: string; content: string }> = [];
 
   try {
-    const initialQuote = getRandomQuote();
-    console.log(chalk.gray('\n' + chalk.italic.yellow(`"${initialQuote.text}"`)));
-    console.log(chalk.gray(`   — ${initialQuote.author}\n`));
-    
     const translateSpinner = ora({
       text: `Translating ${files.length} file(s) to ${options.languages.length} language(s)...`,
       spinner: 'dots2',
@@ -130,13 +126,20 @@ export async function translateRepo(options: TranslateOptions): Promise<void> {
     
     const quoteInterval = setInterval(() => {
       const quote = getRandomQuote();
-      const maxLength = 45;
-      const quoteText = quote.text.length > maxLength 
-        ? quote.text.substring(0, maxLength - 3) + '...' 
-        : quote.text;
-      const authorText = quote.author.length > 15 
-        ? quote.author.substring(0, 12) + '...' 
-        : quote.author;
+      const maxQuoteLength = 200;
+      const maxAuthorLength = 100;
+      
+      let quoteText = quote.text;
+      if (quoteText.length > maxQuoteLength) {
+        const lastSpace = quoteText.lastIndexOf(' ', maxQuoteLength - 3);
+        const truncateAt = lastSpace > maxQuoteLength * 0.7 ? lastSpace : maxQuoteLength - 3;
+        quoteText = quoteText.substring(0, truncateAt) + '...';
+      }
+      
+      let authorText = quote.author;
+      if (authorText.length > maxAuthorLength) {
+        authorText = authorText.substring(0, maxAuthorLength - 3) + '...';
+      }
       
       translateSpinner.text = `${chalk.magenta('Translating...')} ${chalk.gray('|')} ${chalk.italic.yellow(`"${quoteText}"`)} ${chalk.gray(`— ${authorText}`)}`;
     }, 5000);

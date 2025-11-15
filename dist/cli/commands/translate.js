@@ -103,9 +103,6 @@ async function translateRepo(options) {
     let savedFiles = [];
     let translations = [];
     try {
-        const initialQuote = (0, quotes_1.getRandomQuote)();
-        console.log(chalk_1.default.gray('\n' + chalk_1.default.italic.yellow(`"${initialQuote.text}"`)));
-        console.log(chalk_1.default.gray(`   — ${initialQuote.author}\n`));
         const translateSpinner = (0, ora_1.default)({
             text: `Translating ${files.length} file(s) to ${options.languages.length} language(s)...`,
             spinner: 'dots2',
@@ -113,13 +110,18 @@ async function translateRepo(options) {
         }).start();
         const quoteInterval = setInterval(() => {
             const quote = (0, quotes_1.getRandomQuote)();
-            const maxLength = 45;
-            const quoteText = quote.text.length > maxLength
-                ? quote.text.substring(0, maxLength - 3) + '...'
-                : quote.text;
-            const authorText = quote.author.length > 15
-                ? quote.author.substring(0, 12) + '...'
-                : quote.author;
+            const maxQuoteLength = 200;
+            const maxAuthorLength = 100;
+            let quoteText = quote.text;
+            if (quoteText.length > maxQuoteLength) {
+                const lastSpace = quoteText.lastIndexOf(' ', maxQuoteLength - 3);
+                const truncateAt = lastSpace > maxQuoteLength * 0.7 ? lastSpace : maxQuoteLength - 3;
+                quoteText = quoteText.substring(0, truncateAt) + '...';
+            }
+            let authorText = quote.author;
+            if (authorText.length > maxAuthorLength) {
+                authorText = authorText.substring(0, maxAuthorLength - 3) + '...';
+            }
             translateSpinner.text = `${chalk_1.default.magenta('Translating...')} ${chalk_1.default.gray('|')} ${chalk_1.default.italic.yellow(`"${quoteText}"`)} ${chalk_1.default.gray(`— ${authorText}`)}`;
         }, 5000);
         try {
