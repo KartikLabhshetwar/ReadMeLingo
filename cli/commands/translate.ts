@@ -1,14 +1,7 @@
 import { spinner, log, tasks } from '@clack/prompts';
 import { parseRepoUrl, fetchReadme, fetchFile, fetchDirectory } from '../../lib/github';
 import { parseAndValidateMarkdown } from '../../lib/markdown';
-import {
-  createTempWorkspace,
-  writeFilesToWorkspace,
-  createI18nConfig,
-  runLingoCLI,
-  copyTranslatedFilesFromWorkspace,
-  cleanupWorkspace,
-} from '../../lib/lingo';
+import { translateFiles, saveTranslatedFiles } from '../../lib/lingo';
 
 interface TranslateOptions {
   repoUrl: string;
@@ -31,7 +24,7 @@ export async function translateRepo(options: TranslateOptions): Promise<void> {
   s.stop(`Repository: ${repoInfo.owner}/${repoInfo.repo}`);
 
   s.start('Fetching repository files...');
-  const files: Array<{ name: string; path: string; content: string; size: number }> = [];
+  const files: Array<{ name: string; path: string; content: string }> = [];
 
   try {
     const readme = await fetchReadme(repoInfo.owner, repoInfo.repo, options.token);
@@ -41,7 +34,6 @@ export async function translateRepo(options: TranslateOptions): Promise<void> {
         name: readme.name,
         path: readme.path,
         content: parsedContent,
-        size: readme.size,
       });
     }
 
@@ -53,7 +45,6 @@ export async function translateRepo(options: TranslateOptions): Promise<void> {
           name: contributing.name,
           path: contributing.path,
           content: parsedContent,
-          size: contributing.size,
         });
       }
     }
@@ -67,7 +58,6 @@ export async function translateRepo(options: TranslateOptions): Promise<void> {
             name: f.name,
             path: f.path,
             content: parsedContent,
-            size: f.size,
           };
         }));
       } catch (error) {
@@ -101,171 +91,40 @@ export async function translateRepo(options: TranslateOptions): Promise<void> {
       'Or add to ~/.zshrc or ~/.bashrc for persistence.'
     );
   }
-  
-  if (apiKey.length < 20 || !apiKey.includes('_')) {
-    throw new Error(
-      'Invalid LINGODOTDEV_API_KEY format.\n' +
-      'API key should be in format "api_..." or "lingo_...".\n' +
-      'Please check your API key at https://lingo.dev/auth'
-    );
+
+  if (!options.languages || options.languages.length === 0) {
+    throw new Error('No target languages specified');
   }
 
-  let workspace: string | null = null;
-  let copiedFiles: Array<{ path: string; locale: string; fileName: string }> = [];
+  let savedFiles: Array<{ path: string; locale: string; fileName: string }> = [];
+  let translations: Array<{ fileName: string; locale: string; content: string }> = [];
 
   try {
     await tasks([
       {
-        title: 'Creating temporary workspace',
+        title: `Translating ${files.length} file(s) to ${options.languages.length} language(s)`,
         task: async () => {
-          workspace = await createTempWorkspace();
-          return 'Workspace created';
-        },
-      },
-      {
-        title: 'Preparing files for translation',
-        task: async () => {
-          if (!options.languages || options.languages.length === 0) {
-            throw new Error('No target languages specified');
-          }
-
-          const fileMap = new Map<string, string>();
-          const sourceLocale = 'en';
-
-          for (const file of files) {
-            const fileName = file.path.split('/').pop() || file.path;
-            fileMap.set(fileName, file.content);
-          }
-
-          await writeFilesToWorkspace(workspace!, fileMap, sourceLocale);
-          await createI18nConfig(workspace!, sourceLocale, options.languages, files.length);
-          
-          const { promises: fs } = await import('fs');
-          const { join } = await import('path');
-          const configPath = join(workspace!, 'i18n.json');
-          const configContent = await fs.readFile(configPath, 'utf-8');
-          log.info(`i18n.json configuration:\n${configContent}`);
-          
-          log.info(`Configuration: ${options.languages.length} language(s) - ${options.languages.join(', ')}`);
-          return 'Files prepared';
-        },
-      },
-      {
-        title: `Translating to ${options.languages.length} language(s)`,
-        task: async () => {
-          const timeoutMs = 600000;
-          let allOutput = '';
-          
-          const result = await runLingoCLI(workspace!, apiKey, timeoutMs, (output) => {
-            allOutput += output;
-            if (output.includes('Error') || output.includes('Failed') || output.includes('Canceled')) {
-              log.warn(output.trim());
-            }
-          });
-          
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          if (result.stdout) {
-            const stdoutLines = result.stdout.split('\n').filter(l => l.trim());
-            const hasSuccess = stdoutLines.some(l => 
-              l.includes('completed') || 
-              l.includes('✅') || 
-              l.includes('Success') ||
-              l.includes('translated')
-            );
-            if (!hasSuccess && stdoutLines.length > 0) {
-              log.info('Lingo.dev CLI output:');
-              stdoutLines.slice(-10).forEach(line => log.info(`  ${line}`));
-            }
-          }
-          
-          const combinedOutput = result.stdout + result.stderr;
-          
-          if (combinedOutput.includes('No changes detected') || combinedOutput.includes('skipped')) {
-            log.warn('Translation may have been skipped - no changes detected');
-          }
-          
-          const { listWorkspaceFiles } = await import('../../lib/lingo');
-          const filesAfterTranslation = await listWorkspaceFiles(workspace!);
-          const mdFilesAfter = filesAfterTranslation.filter(f => f.endsWith('.md') && !f.includes('i18n.lock'));
-          
-          if (mdFilesAfter.length > 0) {
-            log.info(`Files in workspace after translation: ${mdFilesAfter.join(', ')}`);
-          }
-          
+          translations = await translateFiles(files, options.languages, apiKey);
+          log.info(`Translated ${translations.length} file(s)`);
           return 'Translation completed';
         },
       },
       {
-        title: `Copying translated files to ${options.outputDir}`,
+        title: `Saving translated files to ${options.outputDir}`,
         task: async () => {
-          const { listWorkspaceFiles } = await import('../../lib/lingo');
-          const allFiles = await listWorkspaceFiles(workspace!);
-          const mdFiles = allFiles.filter(f => f.endsWith('.md') && !f.includes('i18n.lock'));
+          savedFiles = await saveTranslatedFiles(translations, options.outputDir);
           
-          log.info(`Workspace contains ${allFiles.length} file(s) total`);
-          if (mdFiles.length > 0) {
-            log.info(`Found ${mdFiles.length} markdown file(s): ${mdFiles.join(', ')}`);
-          } else {
-            log.warn('No markdown files found in workspace');
-          }
-          
-          const sourceFileNames = files.map(f => {
-            const fileName = f.path.split('/').pop() || f.path;
-            return fileName;
-          });
-          
-          log.info(`Looking for translations of: ${sourceFileNames.join(', ')}`);
-          log.info(`Target locales: ${options.languages.join(', ')}`);
-          
-          copiedFiles = await copyTranslatedFilesFromWorkspace(
-            workspace!,
-            sourceFileNames,
-            options.languages,
-            options.outputDir
-          );
-
-          if (copiedFiles.length === 0) {
-            const errorMsg = [
-              'Translation completed but no translated files were found.',
-              '',
-              `Workspace structure:`,
-              `  Total files: ${allFiles.length}`,
-              `  Markdown files: ${mdFiles.length}`,
-              mdFiles.length > 0 ? `  Files found: ${mdFiles.map(f => `    - ${f}`).join('\n')}` : '  No markdown files found',
-              '',
-              `Expected translations:`,
-              `  Source files: ${sourceFileNames.join(', ')}`,
-              `  Target locales: ${options.languages.join(', ')}`,
-              `  Expected locations: ${options.languages.map(locale => sourceFileNames.map(f => `    - ${locale}/${f}`).join('\n')).join('\n')}`,
-              '',
-              'This might indicate:',
-              '  1. Translation was skipped (no changes detected)',
-              '  2. Translation failed silently',
-              '  3. Files were created in a different location',
-              '',
-              'Check the Lingo.dev CLI output above for details.',
-            ].join('\n');
-            throw new Error(errorMsg);
-          }
-
-          log.success(`Files copied to ${options.outputDir}`);
+          log.success(`Files saved to ${options.outputDir}`);
           log.info('\nTranslated files:');
-          copiedFiles.forEach(cf => {
+          savedFiles.forEach(cf => {
             log.step(`${cf.fileName} (${cf.locale})`);
           });
 
-          return `Copied ${copiedFiles.length} file(s) successfully`;
+          return `Saved ${savedFiles.length} file(s) successfully`;
         },
       },
     ]);
-
   } catch (error) {
     throw error;
-  } finally {
-    if (workspace) {
-      await cleanupWorkspace(workspace);
-    }
   }
 }
-

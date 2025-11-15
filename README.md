@@ -1,8 +1,8 @@
 # ReadMeLingo
 
-Translate GitHub repository documentation into multiple languages using Lingo.dev CLI
+Translate GitHub repository documentation into multiple languages using Lingo.dev SDK
 
-ReadMeLingo is a CLI tool that translates repository documentation files locally, ensuring fast, reliable translations that work everywhere
+ReadMeLingo is a CLI tool that translates repository documentation files using the Lingo.dev SDK, ensuring fast, reliable translations that work everywhere
 
 ## Features
 
@@ -227,7 +227,7 @@ Make sure the repository has a README.md file. Use `--include-contributing` and 
 
 - **Language**: TypeScript
 - **CLI Framework**: Commander.js
-- **Translation**: Lingo.dev CLI (runs locally)
+- **Translation**: Lingo.dev SDK (programmatic API)
 - **GitHub Integration**: GitHub REST API
 - **Output**: Files saved to disk
 - **Interactive Prompts**: @clack/prompts for user-friendly CLI experience

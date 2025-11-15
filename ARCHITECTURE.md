@@ -2,7 +2,7 @@
 
 ## Overview
 
-ReadMeLingo uses a **CLI-first architecture** where translations are done locally via CLI, and the web app is used for preview, management, and PR creation.
+ReadMeLingo uses a **SDK-based architecture** where translations are done programmatically using the Lingo.dev SDK, and the web app is used for preview, management, and PR creation.
 
 ## Why This Architecture?
 
@@ -13,14 +13,15 @@ ReadMeLingo uses a **CLI-first architecture** where translations are done locall
 3. **Resource Constraints**: Serverless functions have limited resources
 4. **Cold Starts**: First request can be very slow
 
-### Benefits of CLI-First
+### Benefits of SDK-Based
 
 1. ✅ **No Timeout Limits**: Run as long as needed
-2. ✅ **Faster Execution**: Direct CLI execution, no network overhead
+2. ✅ **Faster Execution**: Direct SDK calls, no CLI process overhead
 3. ✅ **Works Everywhere**: Run locally, in CI/CD, or on any server
-4. ✅ **Better Error Handling**: Full control over the process
+4. ✅ **Better Error Handling**: Programmatic error handling and retries
 5. ✅ **Cost Effective**: No serverless execution costs
-6. ✅ **Reliable**: No cold starts or resource limits
+6. ✅ **Reliable**: No process spawning or file system dependencies
+7. ✅ **Type Safety**: TypeScript support with proper types
 
 ## Architecture Diagram
 
@@ -39,7 +40,7 @@ ReadMeLingo uses a **CLI-first architecture** where translations are done locall
         ┌─────────────────────────────────────┐
         │  CLI Tool (cli/index.ts)            │
         │  - Fetches GitHub files              │
-        │  - Runs Lingo.dev CLI                │
+        │  - Uses Lingo.dev SDK                │
         │  - Saves to ./translations/          │
         └──────────────┬──────────────────────┘
                        │
@@ -75,15 +76,15 @@ ReadMeLingo uses a **CLI-first architecture** where translations are done locall
 
 **Features**:
 - Fetches files from GitHub
-- Runs Lingo.dev CLI locally
+- Uses Lingo.dev SDK for translation
 - Saves translated files to disk
 - No timeout limits
 - Works in CI/CD
 
 **Dependencies**:
 - `commander` - CLI argument parsing
-- `chalk` - Colored output
-- `ora` - Loading spinners
+- `@clack/prompts` - Interactive prompts and spinners
+- `lingo.dev` - Lingo.dev SDK for translations
 - Shared `lib/` utilities
 
 ### Web App (`app/`)
@@ -109,7 +110,7 @@ ReadMeLingo uses a **CLI-first architecture** where translations are done locall
 
 **Modules**:
 - `github.ts` - GitHub API helpers
-- `lingo.ts` - Lingo.dev integration
+- `lingo.ts` - Lingo.dev SDK integration
 - `markdown.ts` - Markdown utilities
 - `zip.ts` - ZIP generation
 
@@ -117,11 +118,11 @@ ReadMeLingo uses a **CLI-first architecture** where translations are done locall
 
 ### Translation Flow
 
-1. **CLI Execution**:
+1. **Translation Flow**:
    ```
    User → CLI → GitHub API → Fetch Files
                 ↓
-           Lingo.dev CLI → Translate
+           Lingo.dev SDK → Translate
                 ↓
            Save to ./translations/
    ```
@@ -187,21 +188,23 @@ readmelingo/
 ### CLI Tool
 - Runs locally or in CI/CD
 - No deployment needed
+- Uses Lingo.dev SDK (no external CLI process)
 - Just install dependencies and run
 
 ### Web App
 - Deploy to Vercel/Netlify/etc.
 - No special requirements
-- No serverless timeout issues (translation done via CLI)
+- No serverless timeout issues (translation done via SDK)
 
 ## Benefits Summary
 
-1. **Performance**: CLI is faster, no network latency
-2. **Reliability**: No timeout issues
+1. **Performance**: SDK is faster, no CLI process overhead
+2. **Reliability**: No timeout issues, programmatic error handling
 3. **Flexibility**: Run anywhere Node.js runs
 4. **Cost**: No serverless execution costs for translation
-5. **Scalability**: CLI can handle large files
-6. **Developer Experience**: Clear separation of concerns
+5. **Scalability**: SDK can handle large files efficiently
+6. **Developer Experience**: Type-safe SDK with clear API
+7. **Maintainability**: No workspace management or file system complexity
 
 ## Future Enhancements
 
