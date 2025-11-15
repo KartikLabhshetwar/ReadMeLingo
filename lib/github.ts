@@ -11,6 +11,33 @@ export interface RepoInfo {
   repo: string;
 }
 
+interface GitHubContentResponse {
+  name: string;
+  path: string;
+  content: string;
+  size: number;
+  type: string;
+  sha?: string;
+}
+
+interface GitHubRepoResponse {
+  default_branch: string;
+}
+
+interface GitHubRefResponse {
+  object: {
+    sha: string;
+  };
+}
+
+interface GitHubErrorResponse {
+  message?: string;
+}
+
+interface GitHubPRResponse {
+  html_url: string;
+}
+
 export function parseRepoUrl(url: string): RepoInfo | null {
   const patterns = [
     /github\.com\/([^\/]+)\/([^\/]+)/,
@@ -35,7 +62,7 @@ export async function fetchReadme(
   repo: string,
   token?: string
 ): Promise<GitHubFile | null> {
-  const headers: HeadersInit = {
+  const headers: Record<string, string> = {
     Accept: 'application/vnd.github.v3+json',
   };
 
@@ -54,7 +81,7 @@ export async function fetchReadme(
       throw new Error(`GitHub API error: ${response.status}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as GitHubContentResponse;
     const content = Buffer.from(data.content, 'base64').toString('utf-8');
 
     return {
@@ -75,7 +102,7 @@ export async function fetchFile(
   path: string,
   token?: string
 ): Promise<GitHubFile | null> {
-  const headers: HeadersInit = {
+  const headers: Record<string, string> = {
     Accept: 'application/vnd.github.v3+json',
   };
 
@@ -94,7 +121,7 @@ export async function fetchFile(
       throw new Error(`GitHub API error: ${response.status}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as GitHubContentResponse;
 
     if (data.type !== 'file') {
       return null;
@@ -120,7 +147,7 @@ export async function fetchDirectory(
   path: string,
   token?: string
 ): Promise<GitHubFile[]> {
-  const headers: HeadersInit = {
+  const headers: Record<string, string> = {
     Accept: 'application/vnd.github.v3+json',
   };
 
@@ -170,7 +197,7 @@ export async function getDefaultBranch(
   repo: string,
   token?: string
 ): Promise<string> {
-  const headers: HeadersInit = {
+  const headers: Record<string, string> = {
     Accept: 'application/vnd.github.v3+json',
   };
 
@@ -187,7 +214,7 @@ export async function getDefaultBranch(
     throw new Error(`Failed to get repo info: ${response.status}`);
   }
 
-  const data = await response.json();
+  const data = await response.json() as GitHubRepoResponse;
   return data.default_branch || 'main';
 }
 
@@ -197,7 +224,7 @@ export async function getLatestCommitSha(
   branch: string,
   token: string
 ): Promise<string> {
-  const headers: HeadersInit = {
+  const headers: Record<string, string> = {
     Accept: 'application/vnd.github.v3+json',
     Authorization: `Bearer ${token}`,
   };
@@ -211,7 +238,7 @@ export async function getLatestCommitSha(
     throw new Error(`Failed to get commit SHA: ${response.status}`);
   }
 
-  const data = await response.json();
+  const data = await response.json() as GitHubRefResponse;
   return data.object.sha;
 }
 
@@ -222,7 +249,7 @@ export async function createBranch(
   baseSha: string,
   token: string
 ): Promise<void> {
-  const headers: HeadersInit = {
+  const headers: Record<string, string> = {
     Accept: 'application/vnd.github.v3+json',
     Authorization: `Bearer ${token}`,
     'Content-Type': 'application/json',
@@ -241,7 +268,7 @@ export async function createBranch(
   );
 
   if (!response.ok) {
-    const error = await response.json();
+    const error = await response.json() as GitHubErrorResponse;
     throw new Error(`Failed to create branch: ${error.message || response.status}`);
   }
 }
@@ -255,7 +282,7 @@ export async function createOrUpdateFile(
   token: string,
   message: string
 ): Promise<void> {
-  const headers: HeadersInit = {
+  const headers: Record<string, string> = {
     Accept: 'application/vnd.github.v3+json',
     Authorization: `Bearer ${token}`,
     'Content-Type': 'application/json',
@@ -273,8 +300,10 @@ export async function createOrUpdateFile(
   };
 
   if (existingFile.ok) {
-    const data = await existingFile.json();
-    body.sha = data.sha;
+    const data = await existingFile.json() as GitHubContentResponse;
+    if (data.sha) {
+      body.sha = data.sha;
+    }
   }
 
   const response = await fetch(
@@ -287,7 +316,7 @@ export async function createOrUpdateFile(
   );
 
   if (!response.ok) {
-    const error = await response.json();
+    const error = await response.json() as GitHubErrorResponse;
     throw new Error(`Failed to create/update file: ${error.message || response.status}`);
   }
 }
@@ -301,7 +330,7 @@ export async function createPullRequest(
   base: string,
   token: string
 ): Promise<string> {
-  const headers: HeadersInit = {
+  const headers: Record<string, string> = {
     Accept: 'application/vnd.github.v3+json',
     Authorization: `Bearer ${token}`,
     'Content-Type': 'application/json',
@@ -322,11 +351,11 @@ export async function createPullRequest(
   );
 
   if (!response.ok) {
-    const error = await response.json();
+    const error = await response.json() as GitHubErrorResponse;
     throw new Error(`Failed to create PR: ${error.message || response.status}`);
   }
 
-  const data = await response.json();
+  const data = await response.json() as GitHubPRResponse;
   return data.html_url;
 }
 

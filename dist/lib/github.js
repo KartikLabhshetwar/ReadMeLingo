@@ -180,7 +180,9 @@ async function createOrUpdateFile(owner, repo, path, content, branch, token, mes
     };
     if (existingFile.ok) {
         const data = await existingFile.json();
-        body.sha = data.sha;
+        if (data.sha) {
+            body.sha = data.sha;
+        }
     }
     const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
         method: 'PUT',

@@ -11,6 +11,6 @@
     "noEmit": false
   },
   "include": ["cli/**/*", "lib/**/*"],
-  "exclude": ["node_modules", "app", "components", ".next"]
+  "exclude": ["node_modules", "app", "components", ".next", "lib/utils.ts"]
 }
 
