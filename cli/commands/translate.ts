@@ -3,6 +3,7 @@ import chalk from 'chalk';
 import { parseRepoUrl, fetchReadme, fetchFile, fetchDirectory } from '../../lib/github';
 import { parseAndValidateMarkdown } from '../../lib/markdown';
 import { translateFiles, saveTranslatedFiles } from '../../lib/lingo';
+import { getRandomQuote, formatQuote } from '../utils/quotes';
 
 interface TranslateOptions {
   repoUrl: string;
@@ -100,9 +101,33 @@ export async function translateRepo(options: TranslateOptions): Promise<void> {
   let translations: Array<{ fileName: string; locale: string; content: string }> = [];
 
   try {
+    const initialQuote = getRandomQuote();
+    console.log(chalk.gray('\n💭 ' + chalk.italic.yellow(`"${initialQuote.text}"`)));
+    console.log(chalk.gray(`   — ${initialQuote.author}\n`));
+    
     const translateSpinner = ora(`Translating ${files.length} file(s) to ${options.languages.length} language(s)...`).start();
-    translations = await translateFiles(files, options.languages, apiKey);
-    translateSpinner.succeed(`Translated ${chalk.bold(translations.length)} file(s)`);
+    
+    const quoteInterval = setInterval(() => {
+      const quote = getRandomQuote();
+      const maxLength = 45;
+      const quoteText = quote.text.length > maxLength 
+        ? quote.text.substring(0, maxLength - 3) + '...' 
+        : quote.text;
+      const authorText = quote.author.length > 15 
+        ? quote.author.substring(0, 12) + '...' 
+        : quote.author;
+      
+      translateSpinner.text = `${chalk.cyan('Translating...')} ${chalk.gray('|')} ${chalk.italic.yellow(`"${quoteText}"`)} ${chalk.gray(`— ${authorText}`)}`;
+    }, 5000);
+
+    try {
+      translations = await translateFiles(files, options.languages, apiKey);
+      clearInterval(quoteInterval);
+      translateSpinner.succeed(`Translated ${chalk.bold(translations.length)} file(s)`);
+    } catch (error) {
+      clearInterval(quoteInterval);
+      throw error;
+    }
 
     const saveSpinner = ora(`Saving translated files to ${options.outputDir}...`).start();
     savedFiles = await saveTranslatedFiles(translations, options.outputDir);

@@ -9,6 +9,7 @@ const chalk_1 = __importDefault(require("chalk"));
 const github_1 = require("../../lib/github");
 const markdown_1 = require("../../lib/markdown");
 const lingo_1 = require("../../lib/lingo");
+const quotes_1 = require("../utils/quotes");
 async function translateRepo(options) {
     const spinner = (0, ora_1.default)('Parsing repository URL...').start();
     const repoInfo = (0, github_1.parseRepoUrl)(options.repoUrl);
@@ -85,9 +86,30 @@ async function translateRepo(options) {
     let savedFiles = [];
     let translations = [];
     try {
+        const initialQuote = (0, quotes_1.getRandomQuote)();
+        console.log(chalk_1.default.gray('\n💭 ' + chalk_1.default.italic.yellow(`"${initialQuote.text}"`)));
+        console.log(chalk_1.default.gray(`   — ${initialQuote.author}\n`));
         const translateSpinner = (0, ora_1.default)(`Translating ${files.length} file(s) to ${options.languages.length} language(s)...`).start();
-        translations = await (0, lingo_1.translateFiles)(files, options.languages, apiKey);
-        translateSpinner.succeed(`Translated ${chalk_1.default.bold(translations.length)} file(s)`);
+        const quoteInterval = setInterval(() => {
+            const quote = (0, quotes_1.getRandomQuote)();
+            const maxLength = 45;
+            const quoteText = quote.text.length > maxLength
+                ? quote.text.substring(0, maxLength - 3) + '...'
+                : quote.text;
+            const authorText = quote.author.length > 15
+                ? quote.author.substring(0, 12) + '...'
+                : quote.author;
+            translateSpinner.text = `${chalk_1.default.cyan('Translating...')} ${chalk_1.default.gray('|')} ${chalk_1.default.italic.yellow(`"${quoteText}"`)} ${chalk_1.default.gray(`— ${authorText}`)}`;
+        }, 5000);
+        try {
+            translations = await (0, lingo_1.translateFiles)(files, options.languages, apiKey);
+            clearInterval(quoteInterval);
+            translateSpinner.succeed(`Translated ${chalk_1.default.bold(translations.length)} file(s)`);
+        }
+        catch (error) {
+            clearInterval(quoteInterval);
+            throw error;
+        }
         const saveSpinner = (0, ora_1.default)(`Saving translated files to ${options.outputDir}...`).start();
         savedFiles = await (0, lingo_1.saveTranslatedFiles)(translations, options.outputDir);
         saveSpinner.succeed(`Saved ${chalk_1.default.bold(savedFiles.length)} file(s) successfully`);
