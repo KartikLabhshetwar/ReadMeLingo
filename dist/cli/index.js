@@ -154,13 +154,13 @@ function printWelcome() {
     console.log(chalk_1.default.gray('  Translate GitHub documentation into 40+ languages\n'));
 }
 function printSuccess(message) {
-    console.log(chalk_1.default.green('✓'), chalk_1.default.bold(message));
+    console.log(chalk_1.default.green('[SUCCESS]'), chalk_1.default.bold(message));
 }
 function printError(message) {
-    console.log(chalk_1.default.red('✗'), chalk_1.default.bold(message));
+    console.log(chalk_1.default.red('[ERROR]'), chalk_1.default.bold(message));
 }
 function printInfo(message) {
-    console.log(chalk_1.default.blue('ℹ'), message);
+    console.log(chalk_1.default.blue('[INFO]'), message);
 }
 async function interactiveMode() {
     printWelcome();
@@ -171,13 +171,13 @@ async function interactiveMode() {
                 name: 'action',
                 message: 'What would you like to do?',
                 choices: [
-                    { name: '📝 Translate Repository Documentation', value: 'translate' },
-                    { name: '❌ Exit', value: 'exit' },
+                    { name: 'Translate Repository Documentation', value: 'translate' },
+                    { name: 'Exit', value: 'exit' },
                 ],
             },
         ]);
         if (action === 'exit') {
-            console.log(chalk_1.default.gray('\nGoodbye! 👋\n'));
+            console.log(chalk_1.default.gray('\nGoodbye!\n'));
             process.exit(0);
         }
         if (action === 'translate') {
@@ -214,9 +214,9 @@ async function handleTranslate() {
                 name: 'filesToInclude',
                 message: 'Which files would you like to translate?',
                 choices: [
-                    { name: '📄 README.md (Main documentation file)', value: 'readme', checked: true },
-                    { name: '📋 CONTRIBUTING.md (Contribution guidelines)', value: 'contributing' },
-                    { name: '📁 /docs folder (Documentation directory)', value: 'docs' },
+                    { name: 'README.md (Main documentation file)', value: 'readme', checked: true },
+                    { name: 'CONTRIBUTING.md (Contribution guidelines)', value: 'contributing' },
+                    { name: '/docs folder (Documentation directory)', value: 'docs' },
                 ],
                 validate: (answer) => {
                     if (answer.length === 0) {

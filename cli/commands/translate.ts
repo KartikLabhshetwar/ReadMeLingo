@@ -15,44 +15,60 @@ interface TranslateOptions {
 }
 
 export async function translateRepo(options: TranslateOptions): Promise<void> {
-  const spinner = ora('Parsing repository URL...').start();
+  const parseSpinner = ora({
+    text: 'Parsing repository URL...',
+    spinner: 'dots',
+    color: 'cyan',
+  }).start();
   
   const repoInfo = parseRepoUrl(options.repoUrl);
   if (!repoInfo) {
-    spinner.fail('Invalid repository URL');
+    parseSpinner.fail('Invalid repository URL');
     throw new Error('Invalid repository URL. Use format: https://github.com/owner/repo or owner/repo');
   }
-  spinner.succeed(`Repository: ${chalk.bold.cyan(repoInfo.owner + '/' + repoInfo.repo)}`);
+  parseSpinner.succeed(`Repository: ${chalk.bold.cyan(repoInfo.owner + '/' + repoInfo.repo)}`);
 
-  spinner.start('Fetching repository files...');
+  const fetchSpinner = ora({
+    text: 'Fetching repository files...',
+    spinner: 'bouncingBar',
+    color: 'blue',
+  }).start();
   const files: Array<{ name: string; path: string; content: string }> = [];
 
   try {
+    fetchSpinner.text = 'Fetching README.md...';
     const readme = await fetchReadme(repoInfo.owner, repoInfo.repo, options.token);
     if (readme) {
+      fetchSpinner.text = 'Parsing README.md...';
       const parsedContent = parseAndValidateMarkdown(readme.content);
       files.push({
         name: readme.name,
         path: readme.path,
         content: parsedContent,
       });
+      fetchSpinner.text = `Found README.md ${chalk.gray(`(${files.length} file${files.length !== 1 ? 's' : ''})`)}`;
     }
 
     if (options.includeContributing) {
+      fetchSpinner.text = 'Fetching CONTRIBUTING.md...';
       const contributing = await fetchFile(repoInfo.owner, repoInfo.repo, 'CONTRIBUTING.md', options.token);
       if (contributing) {
+        fetchSpinner.text = 'Parsing CONTRIBUTING.md...';
         const parsedContent = parseAndValidateMarkdown(contributing.content);
         files.push({
           name: contributing.name,
           path: contributing.path,
           content: parsedContent,
         });
+        fetchSpinner.text = `Found CONTRIBUTING.md ${chalk.gray(`(${files.length} file${files.length !== 1 ? 's' : ''})`)}`;
       }
     }
 
     if (options.includeDocs) {
       try {
+        fetchSpinner.text = 'Fetching /docs folder...';
         const docsFiles = await fetchDirectory(repoInfo.owner, repoInfo.repo, 'docs', options.token);
+        fetchSpinner.text = `Parsing ${docsFiles.length} file(s) from /docs folder...`;
         files.push(...docsFiles.map(f => {
           const parsedContent = parseAndValidateMarkdown(f.content);
           return {
@@ -61,19 +77,20 @@ export async function translateRepo(options: TranslateOptions): Promise<void> {
             content: parsedContent,
           };
         }));
+        fetchSpinner.text = `Found ${docsFiles.length} file(s) in /docs folder ${chalk.gray(`(${files.length} total file${files.length !== 1 ? 's' : ''})`)}`;
       } catch (error) {
-        spinner.warn('Could not fetch /docs folder');
+        fetchSpinner.warn('Could not fetch /docs folder');
       }
     }
 
     if (files.length === 0) {
-      spinner.fail('No markdown files found');
+      fetchSpinner.fail('No markdown files found');
       throw new Error('No markdown files found in repository');
     }
 
-    spinner.succeed(`Found ${chalk.bold(files.length)} file(s) to translate`);
+    fetchSpinner.succeed(`Found ${chalk.bold(files.length)} file(s) to translate`);
   } catch (error) {
-    spinner.fail('Failed to fetch repository files');
+    fetchSpinner.fail('Failed to fetch repository files');
     throw error;
   }
 
@@ -102,10 +119,14 @@ export async function translateRepo(options: TranslateOptions): Promise<void> {
 
   try {
     const initialQuote = getRandomQuote();
-    console.log(chalk.gray('\n💭 ' + chalk.italic.yellow(`"${initialQuote.text}"`)));
+    console.log(chalk.gray('\n' + chalk.italic.yellow(`"${initialQuote.text}"`)));
     console.log(chalk.gray(`   — ${initialQuote.author}\n`));
     
-    const translateSpinner = ora(`Translating ${files.length} file(s) to ${options.languages.length} language(s)...`).start();
+    const translateSpinner = ora({
+      text: `Translating ${files.length} file(s) to ${options.languages.length} language(s)...`,
+      spinner: 'dots2',
+      color: 'magenta',
+    }).start();
     
     const quoteInterval = setInterval(() => {
       const quote = getRandomQuote();
@@ -117,7 +138,7 @@ export async function translateRepo(options: TranslateOptions): Promise<void> {
         ? quote.author.substring(0, 12) + '...' 
         : quote.author;
       
-      translateSpinner.text = `${chalk.cyan('Translating...')} ${chalk.gray('|')} ${chalk.italic.yellow(`"${quoteText}"`)} ${chalk.gray(`— ${authorText}`)}`;
+      translateSpinner.text = `${chalk.magenta('Translating...')} ${chalk.gray('|')} ${chalk.italic.yellow(`"${quoteText}"`)} ${chalk.gray(`— ${authorText}`)}`;
     }, 5000);
 
     try {
@@ -126,16 +147,21 @@ export async function translateRepo(options: TranslateOptions): Promise<void> {
       translateSpinner.succeed(`Translated ${chalk.bold(translations.length)} file(s)`);
     } catch (error) {
       clearInterval(quoteInterval);
+      translateSpinner.fail('Translation failed');
       throw error;
     }
 
-    const saveSpinner = ora(`Saving translated files to ${options.outputDir}...`).start();
+    const saveSpinner = ora({
+      text: `Saving translated files to ${options.outputDir}...`,
+      spinner: 'arrow3',
+      color: 'green',
+    }).start();
     savedFiles = await saveTranslatedFiles(translations, options.outputDir);
     saveSpinner.succeed(`Saved ${chalk.bold(savedFiles.length)} file(s) successfully`);
 
-    console.log(chalk.bold('\n📁 Translated files:'));
+    console.log(chalk.bold('\nTranslated files:'));
     savedFiles.forEach(cf => {
-      console.log(chalk.gray('  •'), chalk.cyan(cf.fileName), chalk.gray(`(${cf.locale})`));
+      console.log(chalk.gray('  -'), chalk.cyan(cf.fileName), chalk.gray(`(${cf.locale})`));
     });
   } catch (error) {
     throw error;

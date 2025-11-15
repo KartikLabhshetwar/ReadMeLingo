@@ -129,15 +129,15 @@ function printWelcome() {
 }
 
 function printSuccess(message: string) {
-  console.log(chalk.green('✓'), chalk.bold(message));
+  console.log(chalk.green('[SUCCESS]'), chalk.bold(message));
 }
 
 function printError(message: string) {
-  console.log(chalk.red('✗'), chalk.bold(message));
+  console.log(chalk.red('[ERROR]'), chalk.bold(message));
 }
 
 function printInfo(message: string) {
-  console.log(chalk.blue('ℹ'), message);
+  console.log(chalk.blue('[INFO]'), message);
 }
 
 async function interactiveMode() {
@@ -150,14 +150,14 @@ async function interactiveMode() {
         name: 'action',
         message: 'What would you like to do?',
         choices: [
-          { name: '📝 Translate Repository Documentation', value: 'translate' },
-          { name: '❌ Exit', value: 'exit' },
+          { name: 'Translate Repository Documentation', value: 'translate' },
+          { name: 'Exit', value: 'exit' },
         ],
       },
     ]);
 
     if (action === 'exit') {
-      console.log(chalk.gray('\nGoodbye! 👋\n'));
+      console.log(chalk.gray('\nGoodbye!\n'));
       process.exit(0);
     }
 
@@ -195,9 +195,9 @@ async function handleTranslate() {
         name: 'filesToInclude',
         message: 'Which files would you like to translate?',
         choices: [
-          { name: '📄 README.md (Main documentation file)', value: 'readme', checked: true },
-          { name: '📋 CONTRIBUTING.md (Contribution guidelines)', value: 'contributing' },
-          { name: '📁 /docs folder (Documentation directory)', value: 'docs' },
+          { name: 'README.md (Main documentation file)', value: 'readme', checked: true },
+          { name: 'CONTRIBUTING.md (Contribution guidelines)', value: 'contributing' },
+          { name: '/docs folder (Documentation directory)', value: 'docs' },
         ],
         validate: (answer: string[]) => {
           if (answer.length === 0) {
