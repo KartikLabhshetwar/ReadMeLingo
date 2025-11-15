@@ -17,7 +17,7 @@ ReadMeLingo uses a **SDK-based CLI architecture** where translations are done pr
 
 1. ✅ **No Timeout Limits**: Run as long as needed
 2. ✅ **Faster Execution**: Direct SDK calls, no CLI process overhead
-3. ✅ **Works Everywhere**: Run locally, in CI/CD, or on any server
+3. ✅ **Works Everywhere**: Run locally or on any server
 4. ✅ **Better Error Handling**: Programmatic error handling and retries
 5. ✅ **Cost Effective**: No serverless execution costs
 6. ✅ **Reliable**: No process spawning or file system dependencies
@@ -72,7 +72,6 @@ ReadMeLingo uses a **SDK-based CLI architecture** where translations are done pr
 - Supports 40+ languages simultaneously
 - Saves translated files to disk with organized naming
 - No timeout limits
-- Works in CI/CD pipelines
 - Private repository support via GitHub tokens
 - Progress indicators with inspirational quotes
 
@@ -232,7 +231,7 @@ readmelingo/
 ### CLI Tool Deployment
 
 - **Installation**: Available as npm package (`npm install -g readmelingo`)
-- **Usage**: Runs locally or in CI/CD pipelines
+- **Usage**: Runs locally
 - **No deployment needed**: Just install and run
 - **Build**: TypeScript compiled to `dist/` directory
 - **Binary**: Executable at `bin/readmelingo` (symlinked to `dist/cli/index.js`)
@@ -260,7 +259,6 @@ readmelingo/
 - [x] npm package for global installation
 - [ ] CLI can create PRs directly (using existing `lib/github.ts` helpers)
 - [ ] Batch processing multiple repositories
-- [ ] CI/CD integration examples and GitHub Actions workflow
 - [ ] Docker image for CLI
 - [ ] Web app features (upload, preview, PR creation) - infrastructure ready in `lib/`
 - [ ] Progress persistence and resume capability
@@ -274,7 +272,6 @@ readmelingo/
 - **No server dependencies**: Users run translations on their own machines
 - **No timeout issues**: Can handle large repositories without serverless limits
 - **Cost effective**: No server costs for translation processing
-- **CI/CD friendly**: Easy to integrate into automated workflows
 - **Privacy**: Files never leave user's machine (except API calls to GitHub/Lingo.dev)
 
 ### Why SDK Over CLI Process?

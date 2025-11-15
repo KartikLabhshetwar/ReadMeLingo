@@ -12,7 +12,6 @@ Translate GitHub repository documentation into 40+ languages using Lingo.dev. Fa
 - **40+ Languages** - Spanish, French, German, Italian, Portuguese, Japanese, Korean, Chinese, Russian, Arabic, Hindi, and more
 - **Interactive Mode** - User-friendly prompts for easy configuration
 - **Flexible** - Works with public and private repositories, customizable output directories
-- **CI/CD Ready** - Run anywhere Node.js runs
 
 ## Installation
 
