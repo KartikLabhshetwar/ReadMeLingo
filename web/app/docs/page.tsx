@@ -355,35 +355,6 @@ readmelingo translate \\
   --include-docs \\
   --output ./translations`}</CodeBlock>
           </div>
-
-          <div>
-            <h3 className="text-lg font-semibold text-[#49423D] mb-3">Example 8: CI/CD Integration</h3>
-            <CodeBlock language="yaml">{`# .github/workflows/translate.yml
-name: Translate Documentation
-
-on:
-  release:
-    types: [published]
-
-jobs:
-  translate:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-      - run: npm install -g readmelingo
-      - run: |
-          readmelingo translate \\
-            --repo \${{ github.repository }} \\
-            --languages es,fr,de,ja,ko \\
-            --include-docs \\
-            --output ./translations
-        env:
-          LINGODOTDEV_API_KEY: \${{ secrets.LINGODOTDEV_API_KEY }}
-          GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}`}</CodeBlock>
-          </div>
         </div>
       </Section>
 
@@ -466,17 +437,6 @@ jobs:
                 <h3 className="font-semibold text-[#49423D] mb-1">Review Translations</h3>
                 <p className="text-[#605A57] text-sm">
                   Always review translated content, especially technical terms and code examples that may need manual adjustment.
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-4">
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#322D2B] text-white flex items-center justify-center font-semibold">
-                4
-              </div>
-              <div>
-                <h3 className="font-semibold text-[#49423D] mb-1">CI/CD Integration</h3>
-                <p className="text-[#605A57] text-sm">
-                  Automate translations in your CI/CD pipeline to keep documentation up-to-date with every release.
                 </p>
               </div>
             </div>

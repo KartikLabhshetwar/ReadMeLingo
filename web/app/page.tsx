@@ -259,7 +259,7 @@ export default function LandingPage() {
                   />
                   <FeatureCard
                     title="Works everywhere"
-                    description="Run on your machine, CI/CD pipelines, or anywhere Node.js runs. No serverless timeout limits."
+                    description="Run on your machine or anywhere Node.js runs. No serverless timeout limits."
                     isActive={activeCard === 2}
                     progress={activeCard === 2 ? progress : 0}
                     onClick={() => handleCardClick(2)}
