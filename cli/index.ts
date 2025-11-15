@@ -52,7 +52,7 @@ const version = getVersion();
 const program = new Command();
 
 program
-  .name('readmelingo')
+  .name('readmelingoo')
   .description('CLI tool to translate GitHub repository documentation using Lingo.dev')
   .version(version);
 

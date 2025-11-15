@@ -1,5 +1,5 @@
 {
-  "name": "readmelingo",
+  "name": "readmelingoo",
   "version": "0.1.0",
   "description": "Translate GitHub repository documentation into 40+ languages using Lingo.dev. Fast batch translation CLI tool for README, CONTRIBUTING, and docs.",
   "keywords": [
@@ -25,7 +25,7 @@
   "homepage": "https://read-me-lingo.vercel.app/",
   "main": "dist/cli/index.js",
   "bin": {
-    "readmelingo": "./dist/cli/index.js"
+    "readmelingoo": "./dist/cli/index.js"
   },
   "files": [
     "dist",
@@ -37,7 +37,7 @@
     "build": "npm run cli:build",
     "cli:build": "tsc -p tsconfig.cli.json && node scripts/add-shebang.js && rm -f dist/tsconfig.cli.tsbuildinfo dist/package.json",
     "cli:run": "node dist/cli/index.js",
-    "cli:test": "node bin/readmelingo",
+    "cli:test": "node bin/readmelingoo",
     "prepack": "npm run build",
     "prepublishOnly": "npm run build",
     "publish:dry": "npm pack --dry-run",
