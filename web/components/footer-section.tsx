@@ -15,28 +15,32 @@ export default function FooterSection() {
           {/* Social Media Icons */}
           <div className="flex justify-start items-start gap-4">
             {/* Twitter/X Icon */}
-            <div className="w-6 h-6 relative overflow-hidden">
-              <div className="w-6 h-6 left-0 top-0 absolute flex items-center justify-center">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path
-                    d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
-                    fill="#49423D"
-                  />
-                </svg>
+            <a href="https://x.com/code_kartik" target="_blank" rel="noopener noreferrer">
+              <div className="w-6 h-6 relative overflow-hidden cursor-pointer hover:opacity-70 transition-opacity">
+                <div className="w-6 h-6 left-0 top-0 absolute flex items-center justify-center">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                      d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
+                      fill="#49423D"
+                    />
+                  </svg>
+                </div>
               </div>
-            </div>
+            </a>
 
             {/* LinkedIn Icon */}
-            <div className="w-6 h-6 relative overflow-hidden">
-              <div className="w-6 h-6 left-0 top-0 absolute flex items-center justify-center">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path
-                    d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19a.66.66 0 000 .14V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z"
-                    fill="#49423D"
-                  />
-                </svg>
+            <a href="https://www.linkedin.com/in/kartikcode/" target="_blank" rel="noopener noreferrer">
+              <div className="w-6 h-6 relative overflow-hidden cursor-pointer hover:opacity-70 transition-opacity">
+                <div className="w-6 h-6 left-0 top-0 absolute flex items-center justify-center">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                      d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19a.66.66 0 000 .14V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z"
+                      fill="#49423D"
+                    />
+                  </svg>
+                </div>
               </div>
-            </div>
+            </a>
 
             {/* GitHub Icon */}
             <a href="https://github.com/KartikLabhshetwar/ReadMeLingo" target="_blank" rel="noopener noreferrer">
@@ -54,72 +58,17 @@ export default function FooterSection() {
           </div>
         </div>
 
-        {/* Navigation Links */}
-        <div className="self-stretch p-4 md:p-8 flex flex-col sm:flex-row flex-wrap justify-start sm:justify-between items-start gap-6 md:gap-8">
-          {/* Product Column */}
-
-          {/* Product Column */}
-          <div className="flex flex-col justify-start items-start gap-3 flex-1 min-w-[120px]">
-            <div className="self-stretch text-[rgba(73,66,61,0.50)] text-sm font-medium leading-5 font-sans">
-              Product
+        {/* Lingo.dev Acknowledgment */}
+        <div className="h-auto p-4 md:p-8 flex flex-col justify-start items-start gap-4">
+          <div className="flex flex-col justify-start items-start gap-2">
+            <div className="text-[rgba(73,66,61,0.50)] text-sm font-medium leading-5 font-sans">
+              Powered by
             </div>
-            <div className="flex flex-col justify-end items-start gap-2">
-              <a href="#features" className="text-[#49423D] text-sm font-normal leading-5 font-sans cursor-pointer hover:text-[#37322F] transition-colors">
-                Features
-              </a>
-              <a href="https://github.com/KartikLabhshetwar/ReadMeLingo#readme" target="_blank" rel="noopener noreferrer" className="text-[#49423D] text-sm font-normal leading-5 font-sans cursor-pointer hover:text-[#37322F] transition-colors">
-                Documentation
-              </a>
-              <a href="https://www.npmjs.com/package/readmelingo" target="_blank" rel="noopener noreferrer" className="text-[#49423D] text-sm font-normal leading-5 font-sans cursor-pointer hover:text-[#37322F] transition-colors">
-                npm Package
-              </a>
-              <a href="https://github.com/KartikLabhshetwar/ReadMeLingo" target="_blank" rel="noopener noreferrer" className="text-[#49423D] text-sm font-normal leading-5 font-sans cursor-pointer hover:text-[#37322F] transition-colors">
-                GitHub
-              </a>
-              <a href="https://lingo.dev" target="_blank" rel="noopener noreferrer" className="text-[#49423D] text-sm font-normal leading-5 font-sans cursor-pointer hover:text-[#37322F] transition-colors">
-                Lingo.dev
-              </a>
-            </div>
-          </div>
-
-          {/* Company Column */}
-          <div className="flex flex-col justify-start items-start gap-3 flex-1 min-w-[120px]">
-            <div className="text-[rgba(73,66,61,0.50)] text-sm font-medium leading-5 font-sans">Resources</div>
-            <div className="flex flex-col justify-center items-start gap-2">
-              <a href="https://github.com/KartikLabhshetwar/ReadMeLingo/blob/main/README.md" target="_blank" rel="noopener noreferrer" className="text-[#49423D] text-sm font-normal leading-5 font-sans cursor-pointer hover:text-[#37322F] transition-colors">
-                Getting Started
-              </a>
-              <a href="https://github.com/KartikLabhshetwar/ReadMeLingo/blob/main/ARCHITECTURE.md" target="_blank" rel="noopener noreferrer" className="text-[#49423D] text-sm font-normal leading-5 font-sans cursor-pointer hover:text-[#37322F] transition-colors">
-                Architecture
-              </a>
-              <a href="https://github.com/KartikLabhshetwar/ReadMeLingo/issues" target="_blank" rel="noopener noreferrer" className="text-[#49423D] text-sm font-normal leading-5 font-sans cursor-pointer hover:text-[#37322F] transition-colors">
-                Issues
-              </a>
-              <a href="https://github.com/KartikLabhshetwar/ReadMeLingo/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" className="text-[#49423D] text-sm font-normal leading-5 font-sans cursor-pointer hover:text-[#37322F] transition-colors">
-                License
-              </a>
-              <a href="https://github.com/KartikLabhshetwar/ReadMeLingo" target="_blank" rel="noopener noreferrer" className="text-[#49423D] text-sm font-normal leading-5 font-sans cursor-pointer hover:text-[#37322F] transition-colors">
-                Contribute
-              </a>
-            </div>
-          </div>
-
-          {/* Support Column */}
-          <div className="flex flex-col justify-start items-start gap-3 flex-1 min-w-[120px]">
-            <div className="text-[rgba(73,66,61,0.50)] text-sm font-medium leading-5 font-sans">Support</div>
-            <div className="flex flex-col justify-center items-start gap-2">
-              <a href="https://github.com/KartikLabhshetwar/ReadMeLingo/issues" target="_blank" rel="noopener noreferrer" className="text-[#49423D] text-sm font-normal leading-5 font-sans cursor-pointer hover:text-[#37322F] transition-colors">
-                Report Issue
-              </a>
-              <a href="https://github.com/KartikLabhshetwar/ReadMeLingo/discussions" target="_blank" rel="noopener noreferrer" className="text-[#49423D] text-sm font-normal leading-5 font-sans cursor-pointer hover:text-[#37322F] transition-colors">
-                Discussions
-              </a>
-              <a href="https://lingo.dev" target="_blank" rel="noopener noreferrer" className="text-[#49423D] text-sm font-normal leading-5 font-sans cursor-pointer hover:text-[#37322F] transition-colors">
-                Lingo.dev Docs
-              </a>
-              <a href="https://github.com/KartikLabhshetwar/ReadMeLingo/blob/main/README.md#troubleshooting" target="_blank" rel="noopener noreferrer" className="text-[#49423D] text-sm font-normal leading-5 font-sans cursor-pointer hover:text-[#37322F] transition-colors">
-                Troubleshooting
-              </a>
+            <a href="https://lingo.dev" target="_blank" rel="noopener noreferrer" className="text-[#49423D] text-lg font-semibold leading-6 font-sans hover:text-[#37322F] transition-colors">
+              Lingo.dev
+            </a>
+            <div className="text-[rgba(73,66,61,0.70)] text-sm font-normal leading-5 font-sans max-w-[280px]">
+              Translation powered by Lingo.dev SDK
             </div>
           </div>
         </div>
