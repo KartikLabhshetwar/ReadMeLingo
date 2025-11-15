@@ -1,6 +1,6 @@
 {
   "name": "readmelingo",
-  "version": "0.1.4",
+  "version": "0.1.0",
   "description": "Translate GitHub repository documentation into 40+ languages using Lingo.dev. Fast batch translation CLI tool for README, CONTRIBUTING, and docs.",
   "keywords": [
     "cli",
