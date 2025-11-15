@@ -17,17 +17,21 @@ export default function Home() {
               <Button 
                 size="lg" 
                 className="text-base px-8 py-6 h-auto"
-                onClick={() => window.open('https://www.npmjs.com/package/readmelingo', '_blank')}
+                asChild
               >
-                Install from npm
+                <a href="https://www.npmjs.com/package/readmelingo" target="_blank" rel="noopener noreferrer">
+                  Install from npm
+                </a>
               </Button>
               <Button 
                 size="lg" 
                 variant="outline" 
                 className="text-base px-8 py-6 h-auto"
-                onClick={() => window.open('https://github.com/KartikLabhshetwar/ReadMeLingo', '_blank')}
+                asChild
               >
-                View on GitHub
+                <a href="https://github.com/KartikLabhshetwar/ReadMeLingo" target="_blank" rel="noopener noreferrer">
+                  View on GitHub
+                </a>
               </Button>
             </div>
           </div>
