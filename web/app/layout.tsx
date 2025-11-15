@@ -22,6 +22,27 @@ export const metadata: Metadata = {
   title: "ReadMeLingo - Translate GitHub Documentation to 40+ Languages",
   description:
     "Translate GitHub repository documentation into multiple languages using Lingo.dev SDK. Fast batch translation for README, CONTRIBUTING, and docs files.",
+  openGraph: {
+    title: "ReadMeLingo - Translate GitHub Documentation to 40+ Languages",
+    description:
+      "Fast batch translation for README, CONTRIBUTING, and docs using Lingo.dev SDK. Works everywhere Node.js runs.",
+    type: "website",
+    images: [
+      {
+        url: "https://read-me-lingo.vercel.app/og.png",
+        width: 1200,
+        height: 630,
+        alt: "ReadMeLingo - Make your docs multilingual in 40+ languages instantly",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ReadMeLingo - Translate GitHub Documentation to 40+ Languages",
+    description:
+      "Fast batch translation for README, CONTRIBUTING, and docs using Lingo.dev SDK. Works everywhere Node.js runs.",
+    images: ["https://read-me-lingo.vercel.app/og.png"],
+  },
 }
 
 export default function RootLayout({
