@@ -6,6 +6,14 @@
 
 Translate GitHub repository documentation into 40+ languages using Lingo.dev. Fast batch translation CLI tool for README, CONTRIBUTING, and docs.
 
+## Demo
+
+
+
+https://github.com/user-attachments/assets/ad639c71-eb2a-48f2-ae67-6235dbe7292b
+
+
+
 ## Features
 
 - **Fast Batch Translation** - Translate to multiple languages in a single API call per file (3-5x faster than sequential translation)
