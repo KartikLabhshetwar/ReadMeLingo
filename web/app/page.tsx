@@ -309,7 +309,7 @@ export default function LandingPage() {
             </button>
             <div className="relative isolate z-[1] size-full overflow-hidden rounded-2xl border-2 border-white">
               <iframe
-                src="https://www.youtube.com/embed/XhoHjGOxmIY?autoplay=1"
+                src="https://www.youtube.com/embed/wp3Epvg1MFM?autoplay=1"
                 title="ReadMeLingo Demo Video"
                 className="size-full rounded-2xl"
                 allowFullScreen
